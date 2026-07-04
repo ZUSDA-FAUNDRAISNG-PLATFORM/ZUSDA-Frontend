@@ -13,7 +13,7 @@ import ericNtongai from "@/assets/committee/Eric_Ntongai.jpeg";
 import deborahKeira from "@/assets/committee/Deborah_Keira.jpeg";
 import annMaroa from "@/assets/committee/Ann_Maroa.jpeg";
 
-type Leader = { name: string; photo?: string };
+type Leader = { name: string; photo?: string; active?: boolean };
 
 const departments: {
   icon: typeof Megaphone;
@@ -88,15 +88,16 @@ const initials = (name: string) =>
 
 const LeaderAvatar = ({
   leader,
-  ring = "ring-gold/40",
+  ring = "ring-gold/60",
 }: {
   leader: Leader;
   ring?: string;
 }) => (
   <div className="flex flex-col items-center gap-2">
-    <div
-      className={`w-20 h-20 rounded-full overflow-hidden ring-2 ${ring} ring-offset-2 ring-offset-background bg-navy/10 flex items-center justify-center shadow-md`}
-    >
+    <div className="relative">
+      <div
+        className={`w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden ring-4 ${ring} ring-offset-4 ring-offset-background bg-navy/10 flex items-center justify-center shadow-[0_10px_30px_rgba(15,23,42,0.20)] transition-all duration-300 hover:shadow-[0_12px_36px_rgba(224,176,76,0.35)]`}
+      >
       {leader.photo ? (
         <img
           src={leader.photo}
@@ -108,6 +109,10 @@ const LeaderAvatar = ({
         <span className="font-display font-bold text-navy text-sm">
           {initials(leader.name)}
         </span>
+      )}
+    </div>
+      {leader.active && (
+        <span className="absolute right-1 top-1 h-3 w-3 rounded-full border-2 border-white bg-gold shadow-[0_0_0_3px_rgba(255,255,255,0.9)]" />
       )}
     </div>
     <span className="text-xs font-medium text-navy text-center leading-tight max-w-[7rem]">

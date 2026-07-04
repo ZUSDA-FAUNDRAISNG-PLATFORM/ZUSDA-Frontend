@@ -66,20 +66,28 @@ const HeroSection = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 1.2 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center mt-10"
+          className="mt-10 flex flex-col items-center justify-center gap-4"
         >
-          <button
-            onClick={() => open("give")}
-            className="bg-gradient-gold text-secondary-foreground font-semibold px-8 py-3.5 rounded-full text-base hover:opacity-90 transition-opacity animate-pulse-gold"
-          >
-            Make a Contribution
-          </button>
-          <a
-            href="#involved"
-            className="border-2 border-gold/40 text-primary-foreground font-semibold px-8 py-3.5 rounded-full text-base hover:bg-gold/10 transition-colors"
-          >
-            Get Involved
-          </a>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <button
+              onClick={() => open("give")}
+              className="bg-gradient-gold text-secondary-foreground font-semibold px-8 py-3.5 rounded-full text-base hover:opacity-90 transition-opacity shadow-lg shadow-gold/20 animate-pulse-gold"
+            >
+              Support the Mission
+            </button>
+            <a
+              href="#involved"
+              className="rounded-full border border-gold/40 bg-white/10 px-8 py-3.5 text-base font-semibold text-primary-foreground backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-gold hover:bg-gold/10"
+            >
+              Get Involved
+            </a>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2 text-sm text-primary-foreground/80">
+            <span className="rounded-full border border-gold/30 bg-white/10 px-3 py-1">13–27 Dec 2026</span>
+            <span className="rounded-full border border-gold/30 bg-white/10 px-3 py-1">Kinungi, Naivasha</span>
+            <span className="rounded-full border border-gold/30 bg-white/10 px-3 py-1">Prayer • Giving • Go</span>
+          </div>
         </motion.div>
       </div>
 

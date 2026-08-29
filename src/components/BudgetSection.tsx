@@ -17,6 +17,13 @@ import {
 import { toast } from "sonner";
 import { useInvolvement } from "./InvolvementDialogs";
 import { apiGet } from "@/api/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 interface ProjectSummary {
   id: number;
@@ -231,6 +238,12 @@ const BudgetSection = () => {
   const averageDonation = recent.length > 0 ? Math.round(raised / recent.length) : 0;
   const largestDonation = recent.reduce((max, item) => Math.max(max, item.amount), 0);
   const supportWall = useMemo(() => recent.slice(0, 6).map((item) => item.donor_name?.trim() || "Anonymous donor"), [recent]);
+  const getAppreciationMessage = (name: string) => {
+    const isAnonymous = name === "Anonymous donor";
+    return isAnonymous
+      ? "Thank you for helping advance this mission."
+      : "Thank you for your faithful support of this mission.";
+  };
   const milestoneSteps = [0, 25, 50, 75, 100];
 
   return (
@@ -524,9 +537,13 @@ const BudgetSection = () => {
                     </p>
                   ) : (
                     supportWall.map((supporter, index) => (
-                      <span key={`${supporter}-${index}`} className="rounded-full border border-gold/20 bg-primary-foreground/5 px-3 py-2 text-sm text-primary-foreground/70">
-                        {supporter}
-                      </span>
+                      <div
+                        key={`${supporter}-${index}`}
+                        className="flex flex-col rounded-2xl border border-gold/20 bg-primary-foreground/5 px-3 py-2"
+                      >
+                        <span className="text-sm font-medium text-primary-foreground/90">{supporter}</span>
+                        <span className="mt-0.5 text-xs text-primary-foreground/60">{getAppreciationMessage(supporter)}</span>
+                      </div>
                     ))
                   )}
                 </div>

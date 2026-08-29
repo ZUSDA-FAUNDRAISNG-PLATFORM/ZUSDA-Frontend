@@ -110,9 +110,7 @@ const Footer = () => (
           © 2026 ZUSDA Evangelical Mission. All rights reserved.
         </p>
 
-        <p className="text-primary-foreground/40 text-xs mt-2">
-          Website developed by JKomosh • 0745988691
-        </p>
+        
       </div>
     </div>
   </footer>

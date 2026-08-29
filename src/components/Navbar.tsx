@@ -58,10 +58,6 @@ const Navbar = () => {
               ZUSDA
             </h1>
 
-            <p className="text-gold text-base md:text-lg font-semibold">
-              Mission 2026
-            </p>
-
             <p className="text-xs md:text-sm text-primary-foreground/70">
               Seventh-day Adventist Church • Zetech University
             </p>

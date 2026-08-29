@@ -5,12 +5,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
+import { submitMpesaDonation, submitMissionaryRegistration, submitPrayerSignup } from "@/api/involvement";
 
 type DialogKind = "pray" | "give" | "go" | null;
 
-const DialogCtx = createContext<{ open: (k: DialogKind) => void }>({ open: () => {} });
+const DialogCtx = createContext<{ open: (k: DialogKind) => void; notifyContribution: (amount: number) => void }>({ open: () => {}, notifyContribution: () => {} });
 
 export const useInvolvement = () => useContext(DialogCtx);
 
@@ -20,10 +20,16 @@ const nameSchema = z.string().trim().min(2, "Name too short").max(100);
 
 export const InvolvementProvider = ({ children }: { children: ReactNode }) => {
   const [kind, setKind] = useState<DialogKind>(null);
+  const [refreshTick, setRefreshTick] = useState(0);
   const close = () => setKind(null);
 
+  const notifyContribution = (amount: number) => {
+    window.dispatchEvent(new CustomEvent("zusda:contribution", { detail: { amount } }));
+    setRefreshTick((v) => v + 1);
+  };
+
   return (
-    <DialogCtx.Provider value={{ open: setKind }}>
+    <DialogCtx.Provider value={{ open: setKind, notifyContribution }}>
       {children}
       <PrayDialog open={kind === "pray"} onClose={close} />
       <GiveDialog open={kind === "give"} onClose={close} />
@@ -47,15 +53,21 @@ const PrayDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("prayer_signups").insert({
-      full_name: form.full_name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim() || null,
-      message: form.message.trim() || null,
-    });
-    setLoading(false);
-    if (error) return toast.error("Could not submit. Try again.");
-    toast.success("Thank you for joining the prayer team! 🙏");
+    try {
+      await submitPrayerSignup({
+        fullName: form.full_name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim() || null,
+        message: form.message.trim() || null,
+      });
+      toast.success("Thank you for joining the prayer team!");
+      setForm({ full_name: "", email: "", phone: "", message: "" });
+      onClose();
+    } catch {
+      toast.error("Could not submit. Try again.");
+    } finally {
+      setLoading(false);
+    }
     setForm({ full_name: "", email: "", phone: "", message: "" });
     onClose();
   };
@@ -84,6 +96,7 @@ const PrayDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
 const GiveDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ full_name: "", phone: "", amount: "" });
+  const { notifyContribution } = useInvolvement();
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -96,17 +109,22 @@ const GiveDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("donations").insert({
-      full_name: form.full_name.trim() || null,
-      phone: form.phone.trim(),
-      amount: Number(form.amount),
-      status: "pending",
-    });
-    setLoading(false);
-    if (error) return toast.error("Could not record contribution. Try again.");
-    toast.success("Thank you! We'll send M-Pesa instructions to your phone shortly.");
-    setForm({ full_name: "", phone: "", amount: "" });
-    onClose();
+    try {
+      await submitMpesaDonation({
+        donor_name: form.full_name.trim() || "Anonymous",
+        phone: form.phone.trim(),
+        amount: Number(form.amount),
+        project_id: 1,
+      });
+      notifyContribution(Number(form.amount));
+      toast.success("M-Pesa prompt sent! Enter your PIN on your phone to complete the donation.");
+      setForm({ full_name: "", phone: "", amount: "" });
+      onClose();
+    } catch {
+      toast.error("Could not record contribution. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -147,19 +165,23 @@ const GoDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => 
       return;
     }
     setLoading(true);
-    const { error } = await supabase.from("missionary_registrations").insert({
-      full_name: form.full_name.trim(),
-      email: form.email.trim(),
-      phone: form.phone.trim(),
-      church: form.church.trim() || null,
-      age: form.age ? Number(form.age) : null,
-      notes: form.notes.trim() || null,
-    });
-    setLoading(false);
-    if (error) return toast.error("Could not register. Try again.");
-    toast.success("Registered! We'll be in touch with mission details. 🙌");
-    setForm({ full_name: "", email: "", phone: "", church: "", age: "", notes: "" });
-    onClose();
+    try {
+      await submitMissionaryRegistration({
+        fullName: form.full_name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        church: form.church.trim() || null,
+        age: form.age ? Number(form.age) : null,
+        notes: form.notes.trim() || null,
+      });
+      toast.success("Registered! We'll be in touch with mission details.");
+      setForm({ full_name: "", email: "", phone: "", church: "", age: "", notes: "" });
+      onClose();
+    } catch {
+      toast.error("Could not register. Try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

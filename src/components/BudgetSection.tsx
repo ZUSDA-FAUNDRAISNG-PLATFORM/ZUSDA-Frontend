@@ -13,6 +13,7 @@ import {
   Clock3,
   BadgeCheck,
   Globe2,
+  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useInvolvement } from "./InvolvementDialogs";
@@ -237,14 +238,54 @@ const BudgetSection = () => {
   }, [recent]);
   const averageDonation = recent.length > 0 ? Math.round(raised / recent.length) : 0;
   const largestDonation = recent.reduce((max, item) => Math.max(max, item.amount), 0);
-  const supportWall = useMemo(() => recent.slice(0, 6).map((item) => item.donor_name?.trim() || "Anonymous donor"), [recent]);
-  const getAppreciationMessage = (name: string) => {
-    const isAnonymous = name === "Anonymous donor";
-    return isAnonymous
-      ? "Thank you for helping advance this mission."
-      : "Thank you for your faithful support of this mission.";
-  };
   const milestoneSteps = [0, 25, 50, 75, 100];
+
+  const formatContributionDate = (iso: string) => {
+    const d = new Date(iso);
+    const datePart = d
+      .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
+      .toUpperCase()
+      .replace(/,/g, "");
+    const timePart = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+    return `${datePart} · ${timePart}`;
+  };
+
+  const statusStyles: Record<string, string> = {
+    success: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
+    failed: "bg-red-500/15 text-red-400 border-red-500/30",
+    pending: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+  };
+  const getStatusStyle = (status: string) =>
+    statusStyles[status?.toLowerCase()] ?? "bg-navy/40 text-primary-foreground/60 border-gold/20";
+
+  const statusAccentBar: Record<string, string> = {
+    success: "bg-emerald-500",
+    failed: "bg-red-500",
+    pending: "bg-amber-500",
+  };
+  const getStatusAccentBar = (status: string) =>
+    statusAccentBar[status?.toLowerCase()] ?? "bg-gold/40";
+
+  const statusIconWrap: Record<string, string> = {
+    success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
+    failed: "border-red-500/30 bg-red-500/10 text-red-400",
+    pending: "border-amber-500/30 bg-amber-500/10 text-amber-400",
+  };
+  const getStatusIconWrap = (status: string) =>
+    statusIconWrap[status?.toLowerCase()] ?? "border-gold/20 bg-navy/60 text-gold";
+
+  const getStatusIcon = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case "success":
+        return <BadgeCheck size={16} />;
+      case "failed":
+        return <XCircle size={16} />;
+      case "pending":
+        return <Clock3 size={16} />;
+      default:
+        return <Clock3 size={16} />;
+    }
+  };
 
   return (
     <section className="relative overflow-hidden bg-navy py-20">
@@ -314,18 +355,33 @@ const BudgetSection = () => {
                 </div>
               </div>
 
-              <div className="mt-6 h-3 w-full overflow-hidden rounded-full bg-primary-foreground/10">
+              <div className="mt-6 relative h-7 w-full overflow-hidden rounded-full bg-primary-foreground/10 shadow-inner">
+                <div
+                  className="absolute inset-0 opacity-[0.07]"
+                  style={{
+                    backgroundImage: "repeating-linear-gradient(135deg, #fff 0px, #fff 2px, transparent 2px, transparent 10px)",
+                  }}
+                />
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 0.7, ease: "easeOut" }}
-                  className="h-3 rounded-full bg-gradient-gold"
-                />
+                  transition={{ duration: 1, ease: "easeOut" }}
+                  className="relative h-full rounded-full bg-gradient-gold shadow-lg shadow-gold/30"
+                >
+                  <motion.div
+                    animate={{ x: ["-100%", "200%"] }}
+                    transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
+                    className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
+                  />
+                </motion.div>
+                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-navy/70 px-2 py-0.5 text-[10px] font-bold text-gold-light backdrop-blur-sm">
+                  {progressPercent}%
+                </span>
               </div>
 
               <div className="mt-4 flex items-center justify-between text-sm text-primary-foreground/70">
-                <span>{progressPercent}% funded</span>
-                <span>{remaining.toLocaleString("en-KE")} remaining</span>
+                <span className="font-semibold text-gold">{progressPercent}% funded</span>
+                <span>KSH {remaining.toLocaleString("en-KE")} remaining</span>
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-2">
@@ -340,12 +396,19 @@ const BudgetSection = () => {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-gold/15 bg-navy/30 p-4">
+                <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-navy/30 p-4">
+                  <span className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full bg-emerald-400/10 blur-2xl" />
                   <div className="flex items-center gap-2 text-gold">
                     <HandCoins size={16} />
                     <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">Raised</span>
+                    <span className="relative ml-auto flex h-1.5 w-1.5">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                    </span>
                   </div>
-                  <p className="mt-2 font-display text-xl font-semibold text-primary-foreground">{amountLabel}</p>
+                  <p className="mt-2 font-display text-xl font-semibold text-primary-foreground">
+                    <CountUpValue value={raised} prefix="KSH " className="" />
+                  </p>
                 </div>
                 <div className="rounded-2xl border border-gold/15 bg-navy/30 p-4">
                   <div className="flex items-center gap-2 text-gold">
@@ -447,29 +510,40 @@ const BudgetSection = () => {
                   <span className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">Live</span>
                 </div>
                 <div className="space-y-2">
+                  <AnimatePresence mode="popLayout">
                   {recent.map((item, index) => (
                     <motion.div
                       key={item.id}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.04 }}
-                      className={`flex items-center justify-between rounded-xl border px-3 py-3 text-sm text-primary-foreground/80 ${index === 0 ? "border-gold/30 bg-gold/10 shadow-lg shadow-gold/10" : "border-gold/10 bg-navy/30"}`}
+                      layout
+                      initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9 }}
+                      transition={{ delay: index * 0.05, type: "spring", stiffness: 420, damping: 18, mass: 0.7 }}
+                      whileHover={{ y: -2 }}
+                      className={`group relative overflow-hidden rounded-2xl border pl-5 pr-4 py-4 transition-all duration-300 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10 ${index === 0 ? "border-gold/30 bg-gold/5" : "border-gold/10 bg-navy/30"}`}
                     >
-                      <div className="flex items-center gap-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-full border border-gold/20 bg-navy/60 text-[11px] font-semibold text-gold">
-                          {item.donor_name?.trim() ? item.donor_name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() : "AN"}
-                        </span>
-                        <div>
-                          <p className="font-medium text-primary-foreground">{item.donor_name}</p>
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-primary-foreground/50">{formatRelativeTime(item.created_at)}</p>
+                      <span className={`absolute left-0 top-0 bottom-0 w-1 ${getStatusAccentBar(item.status)}`} />
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${getStatusIconWrap(item.status)}`}>
+                            {getStatusIcon(item.status)}
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-lg md:text-xl font-bold text-primary-foreground leading-none truncate">
+                              KSH {item.amount.toLocaleString("en-KE")}
+                            </p>
+                            <p className="mt-1.5 text-[11px] uppercase tracking-[0.15em] text-primary-foreground/40">
+                              {formatContributionDate(item.created_at)}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-gold">KSH {item.amount.toLocaleString("en-KE")}</p>
-                        <p className="text-[11px] uppercase tracking-[0.2em] text-primary-foreground/50">{item.status}</p>
+                        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${getStatusStyle(item.status)}`}>
+                          {item.status}
+                        </span>
                       </div>
                     </motion.div>
                   ))}
+                  </AnimatePresence>
                 </div>
               </div>
             ) : (
@@ -523,31 +597,6 @@ const BudgetSection = () => {
                 </div>
               </motion.div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 16 }}
-                animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.35 }}
-                className="rounded-3xl border border-gold/20 bg-gradient-to-br from-gold/10 to-transparent p-6"
-              >
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Support wall</p>
-                <div className="mt-4 flex flex-wrap gap-2">
-                  {supportWall.length === 0 ? (
-                    <p className="text-sm text-primary-foreground/60">
-                      Be the first to leave your mark on the support wall.
-                    </p>
-                  ) : (
-                    supportWall.map((supporter, index) => (
-                      <div
-                        key={`${supporter}-${index}`}
-                        className="flex flex-col rounded-2xl border border-gold/20 bg-primary-foreground/5 px-3 py-2"
-                      >
-                        <span className="text-sm font-medium text-primary-foreground/90">{supporter}</span>
-                        <span className="mt-0.5 text-xs text-primary-foreground/60">{getAppreciationMessage(supporter)}</span>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </motion.div>
             </div>
           </div>
 

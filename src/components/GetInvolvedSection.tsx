@@ -4,7 +4,7 @@ import { HandHeart, Coins, Footprints } from "lucide-react";
 import { useInvolvement } from "./InvolvementDialogs";
 
 const PRAYER_WHATSAPP_LINK = "https://chat.whatsapp.com/LnezZ6dnqkcKw0zhvsnjXg?mode=gi_t";
-const GO_WHATSAPP_LINK = "https://chat.whatsapp.com/Hx53MiLvjnWCYx81cPxLMw?mode=gi_t";
+const GO_FORM_LINK = "https://forms.google.com/REPLACE_ME"; // TODO: paste real Google Form URL
 
 const ways: { icon: any; title: string; desc: string; action: string; kind: "give" | "pray" | "go"; whatsappLink?: string }[] = [
   {
@@ -22,7 +22,7 @@ const ways: { icon: any; title: string; desc: string; action: string; kind: "giv
     desc: "Participate physically as a missionary during the 15-day outreach. Open to all willing individuals ready to serve.",
     action: "Register to Go",
     kind: "go",
-    whatsappLink: GO_WHATSAPP_LINK,
+    whatsappLink: GO_FORM_LINK,
   },
 ];
 

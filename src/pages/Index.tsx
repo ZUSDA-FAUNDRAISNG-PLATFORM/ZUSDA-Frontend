@@ -1,7 +1,6 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import AboutSection from "@/components/AboutSection";
-import DetailsSection from "@/components/DetailsSection";
 import ThemeSection from "@/components/ThemeSection";
 import BudgetSection from "@/components/BudgetSection";
 import GetInvolvedSection from "@/components/GetInvolvedSection";
@@ -39,7 +38,6 @@ const Index = () => (
       <Navbar />
       <HeroSection />
       <div className="border-t border-gold/10"><AboutSection /></div>
-      <div className="border-t border-gold/10"><DetailsSection /></div>
       <div className="border-t border-gold/10"><ThemeSection /></div>
       <div className="border-t border-gold/10"><BudgetSection /></div>
       <div className="border-t border-gold/10"><GetInvolvedSection /></div>

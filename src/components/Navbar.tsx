@@ -8,7 +8,6 @@ import sdaLogo from "@/assets/sda-logo.jpg";
 const links = [
   { label: "Home", href: "#home", id: "home" },
   { label: "About", href: "#about", id: "about" },
-  { label: "Details", href: "#details", id: "details" },
   { label: "Theme", href: "#theme", id: "theme" },
   { label: "Get Involved", href: "#involved", id: "involved" },
   { label: "Committee", href: "#committee", id: "committee" },
@@ -34,7 +33,7 @@ const Navbar = () => {
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gold/20 transition-all duration-300 ${
-        scrolled ? "bg-navy/95 shadow-lg" : "bg-navy/40 shadow-none"
+        scrolled ? "bg-cream/95 shadow-lg" : "bg-cream/70 shadow-none"
       }`}
     >
       <div className="w-full px-2 flex items-center justify-between h-28">
@@ -54,11 +53,11 @@ const Navbar = () => {
           </div>
 
           <div className="leading-tight">
-            <h1 className="font-display text-2xl md:text-3xl font-bold text-primary-foreground">
+            <h1 className="font-display text-3xl md:text-4xl font-extrabold text-navy">
               ZUSDA
             </h1>
 
-            <p className="text-xs md:text-sm text-primary-foreground/70">
+            <p className="text-sm md:text-base text-navy font-semibold">
               Seventh-day Adventist Church • Zetech University
             </p>
           </div>
@@ -70,10 +69,10 @@ const Navbar = () => {
             <motion.a
               key={link.href}
               href={link.href}
-              className={`text-sm font-medium transition-colors relative group ${
+              className={`text-base font-extrabold transition-colors relative group ${
                 activeSection === link.id
                   ? "text-gold"
-                  : "text-primary-foreground/70 hover:text-gold"
+                  : "text-navy hover:text-gold"
               }`}
               whileHover={{ y: -2 }}
               transition={{ type: "spring", stiffness: 300 }}
@@ -112,7 +111,7 @@ const Navbar = () => {
 
         {/* Mobile Menu Button */}
         <button
-          className="md:hidden text-primary-foreground pr-4"
+          className="md:hidden text-navy pr-4"
           onClick={() => setOpen(!open)}
         >
           {open ? <X size={28} /> : <Menu size={28} />}
@@ -131,7 +130,7 @@ const Navbar = () => {
               stiffness: 300,
               damping: 30,
             }}
-            className="md:hidden bg-navy/98 backdrop-blur-sm overflow-hidden border-t border-gold/10"
+            className="md:hidden bg-cream/98 backdrop-blur-sm overflow-hidden border-t border-gold/10"
           >
             <div className="px-6 py-5 flex flex-col gap-2">
               {links.map((link, index) => (
@@ -142,10 +141,10 @@ const Navbar = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
-                  className={`py-3 px-4 rounded-lg transition-colors relative group ${
+                  className={`py-3 px-4 rounded-lg text-base font-bold transition-colors relative group ${
                     activeSection === link.id
                       ? "text-gold bg-gold/10"
-                      : "text-primary-foreground/80 hover:text-gold hover:bg-gold/5"
+                      : "text-navy hover:text-gold hover:bg-gold/5"
                   }`}
                 >
                   {link.label}

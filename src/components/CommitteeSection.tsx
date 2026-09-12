@@ -1,6 +1,11 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { Megaphone, Wallet, Radio, Truck, Utensils, Crown } from "lucide-react";
+import { Megaphone } from "lucide-react";
+import walletIcon from "@/assets/committee-icons/wallet.png";
+import radioIcon from "@/assets/committee-icons/radio.png";
+import truckIcon from "@/assets/committee-icons/truck.png";
+import utensilsIcon from "@/assets/committee-icons/utensils.png";
+import crownIcon from "@/assets/committee-icons/crown.png";
 import gregoryDaghe from "@/assets/committee/Gregory_Daghe.jpeg";
 import pastorMoses from "@/assets/committee/Pastor_Moses_Kariuki.jpeg";
 import leahMonchari from "@/assets/committee/Leah_Monchari.jpeg";
@@ -16,7 +21,8 @@ import annMaroa from "@/assets/committee/Ann_Maroa.jpeg";
 type Leader = { name: string; photo?: string; active?: boolean };
 
 const departments: {
-  icon: typeof Megaphone;
+  icon?: typeof Megaphone;
+  iconSrc?: string;
   name: string;
   role: string;
   leaders: Leader[];
@@ -31,7 +37,7 @@ const departments: {
     ],
   },
   {
-    icon: Wallet,
+    iconSrc: walletIcon,
     name: "Finance",
     role: "Stewardship & accountability",
     leaders: [
@@ -40,7 +46,7 @@ const departments: {
     ],
   },
   {
-    icon: Radio,
+    iconSrc: radioIcon,
     name: "Media & Communication",
     role: "Outreach, publicity & documentation",
     leaders: [
@@ -49,7 +55,7 @@ const departments: {
     ],
   },
   {
-    icon: Truck,
+    iconSrc: truckIcon,
     name: "Transport & Logistics",
     role: "Movement, accommodation & supplies",
     leaders: [
@@ -58,7 +64,7 @@ const departments: {
     ],
   },
   {
-    icon: Utensils,
+    iconSrc: utensilsIcon,
     name: "Food & Catering",
     role: "Meals & hospitality",
     leaders: [
@@ -69,7 +75,7 @@ const departments: {
 ];
 
 const missionChairman = {
-  icon: Crown,
+  iconSrc: crownIcon,
   name: "Mission Chairman",
   role: "General Oversight",
   leader: "Gregory Daghe",
@@ -160,8 +166,8 @@ const CommitteeSection = () => {
                   className="w-full h-full object-cover object-center"
                 />
               </div>
-              <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full flex items-center justify-center bg-gradient-gold shadow-lg">
-                <missionChairman.icon className="text-secondary-foreground" size={20} />
+              <div className="absolute -bottom-1 -right-1 w-10 h-10 rounded-full flex items-center justify-center bg-gradient-gold shadow-lg p-2">
+                <img src={missionChairman.iconSrc} alt="" className="w-full h-full object-contain" />
               </div>
             </div>
             <div className="flex-1 text-center sm:text-left">
@@ -190,8 +196,12 @@ const CommitteeSection = () => {
               className="rounded-2xl p-6 border transition-shadow hover:shadow-elevated bg-cream border-gold/10 flex flex-col"
             >
               <div className="flex items-start gap-4 mb-5">
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-navy">
-                  <d.icon className="text-primary-foreground" size={22} />
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-navy p-2.5">
+                  {d.iconSrc ? (
+                    <img src={d.iconSrc} alt="" className="w-full h-full object-contain invert" />
+                  ) : (
+                    d.icon && <d.icon className="text-primary-foreground" size={22} />
+                  )}
                 </div>
                 <div className="flex-1">
                   <h4 className="font-display font-bold text-lg text-navy">{d.name}</h4>

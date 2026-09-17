@@ -1,21 +1,11 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { HandHeart, Coins, Footprints } from "lucide-react";
+import { Footprints } from "lucide-react";
 import { useInvolvement } from "./InvolvementDialogs";
 
-const PRAYER_WHATSAPP_LINK = "https://chat.whatsapp.com/LnezZ6dnqkcKw0zhvsnjXg?mode=gi_t";
 const GO_FORM_LINK = "https://forms.google.com/REPLACE_ME"; // TODO: paste real Google Form URL
 
 const ways: { icon: any; title: string; desc: string; action: string; kind: "give" | "pray" | "go"; whatsappLink?: string }[] = [
-  {
-    icon: HandHeart,
-    title: "Pray",
-    desc: "Commit to spiritual support through intercession for the mission and the community of Kinungi. Prayer is the foundation of everything we do.",
-    action: "Join Prayer Team",
-    kind: "pray",
-    whatsappLink: PRAYER_WHATSAPP_LINK,
-  },
-  
   {
     icon: Footprints,
     title: "Go",
@@ -48,7 +38,7 @@ const GetInvolvedSection = () => {
           </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="grid gap-8 max-w-md mx-auto">
           {ways.map((w, i) => (
             <motion.div
               key={w.title}

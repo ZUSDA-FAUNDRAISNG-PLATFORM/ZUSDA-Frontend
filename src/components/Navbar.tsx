@@ -57,7 +57,7 @@ const Navbar = () => {
               ZUSDA
             </h1>
 
-            <p className="text-sm md:text-base text-navy font-semibold">
+            <p className="text-sm md:text-base text-navy font-bold">
               Seventh-day Adventist Church • Zetech University
             </p>
           </div>
@@ -103,7 +103,7 @@ const Navbar = () => {
 
           <button
             onClick={() => openDialog("give")}
-            className="bg-gradient-gold text-secondary-foreground text-sm font-semibold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity shadow-md hover:shadow-lg"
+            className="bg-gradient-gold text-secondary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity shadow-md hover:shadow-lg"
           >
             Support the Mission
           </button>
@@ -171,7 +171,7 @@ const Navbar = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: links.length * 0.05 }}
-                className="bg-gradient-gold text-secondary-foreground font-semibold px-5 py-3 rounded-full text-center mt-2 hover:opacity-90 transition-opacity"
+                className="bg-gradient-gold text-secondary-foreground font-bold px-5 py-3 rounded-full text-center mt-2 hover:opacity-90 transition-opacity"
               >
                 Support the Mission
               </motion.button>

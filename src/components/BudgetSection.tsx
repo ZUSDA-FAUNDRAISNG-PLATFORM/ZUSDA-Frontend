@@ -223,19 +223,6 @@ const BudgetSection = () => {
   const progressPercent = target > 0 ? Math.min(Math.round((raised / target) * 100), 100) : 0;
   const milestonePercent = 25;
   const milestoneAmount = Math.max(target * (milestonePercent / 100) - raised, 0);
-  const contributorCount = useMemo(() => {
-    const uniqueDonors = new Set(recent.map((item) => item.donor_name?.trim()).filter(Boolean));
-    return uniqueDonors.size > 0 ? uniqueDonors.size : 1;
-  }, [recent]);
-  const contributorDetail = useMemo(() => {
-    if (recent.length === 0) {
-      return "Be the first to join the mission";
-    }
-
-    const uniqueDonors = new Set(recent.map((item) => item.donor_name?.trim()).filter(Boolean));
-    const count = uniqueDonors.size > 0 ? uniqueDonors.size : recent.length;
-    return `${count} ${count === 1 ? "supporter" : "supporters"} in the latest activity`;
-  }, [recent]);
   const averageDonation = recent.length > 0 ? Math.round(raised / recent.length) : 0;
   const largestDonation = recent.reduce((max, item) => Math.max(max, item.amount), 0);
   const milestoneSteps = [0, 25, 50, 75, 100];
@@ -303,13 +290,6 @@ const BudgetSection = () => {
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-gold">
               <TrendingUp size={14} />
               Live Mission Budget
-            </div>
-            <div className="flex items-center justify-center gap-2 text-sm text-primary-foreground/60">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
-              </span>
-              <span>Realtime giving pulse</span>
             </div>
             <h2 className="mb-3 mt-4 font-display text-3xl font-bold text-primary-foreground md:text-4xl">
               {loading ? (
@@ -395,16 +375,12 @@ const BudgetSection = () => {
                 ))}
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-navy/30 p-4">
                   <span className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full bg-emerald-400/10 blur-2xl" />
                   <div className="flex items-center gap-2 text-gold">
                     <HandCoins size={16} />
                     <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">Raised</span>
-                    <span className="relative ml-auto flex h-1.5 w-1.5">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-400" />
-                    </span>
                   </div>
                   <p className="mt-2 font-display text-xl font-semibold text-primary-foreground">
                     <CountUpValue value={raised} prefix="KSH " className="" />
@@ -416,21 +392,6 @@ const BudgetSection = () => {
                     <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">Goal</span>
                   </div>
                   <p className="mt-2 font-display text-xl font-semibold text-primary-foreground">{targetLabel}</p>
-                </div>
-                <div className="rounded-2xl border border-gold/15 bg-navy/30 p-4">
-                  <div className="flex items-center gap-2 text-gold">
-                    <Users size={16} />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">Contributors</span>
-                  </div>
-                  <motion.p
-                    key={contributorCount}
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mt-2 font-display text-xl font-semibold text-primary-foreground"
-                  >
-                    {contributorCount}
-                  </motion.p>
-                  <p className="mt-1 text-sm text-primary-foreground/60">{contributorDetail}</p>
                 </div>
               </div>
             </motion.div>
@@ -522,24 +483,15 @@ const BudgetSection = () => {
                       whileHover={{ y: -2 }}
                       className={`group relative overflow-hidden rounded-2xl border pl-5 pr-4 py-4 transition-all duration-300 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10 ${index === 0 ? "border-gold/30 bg-gold/5" : "border-gold/10 bg-navy/30"}`}
                     >
-                      <span className={`absolute left-0 top-0 bottom-0 w-1 ${getStatusAccentBar(item.status)}`} />
                       <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border ${getStatusIconWrap(item.status)}`}>
-                            {getStatusIcon(item.status)}
-                          </span>
-                          <div className="min-w-0">
-                            <p className="text-lg md:text-xl font-bold text-primary-foreground leading-none truncate">
-                              KSH {item.amount.toLocaleString("en-KE")}
-                            </p>
-                            <p className="mt-1.5 text-[11px] uppercase tracking-[0.15em] text-primary-foreground/40">
-                              {formatContributionDate(item.created_at)}
-                            </p>
-                          </div>
+                        <div className="min-w-0">
+                          <p className="text-lg md:text-xl font-bold text-primary-foreground leading-none truncate">
+                            KSH {item.amount.toLocaleString("en-KE")}
+                          </p>
+                          <p className="mt-1.5 text-[11px] uppercase tracking-[0.15em] text-primary-foreground/40">
+                            {formatContributionDate(item.created_at)}
+                          </p>
                         </div>
-                        <span className={`shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.15em] ${getStatusStyle(item.status)}`}>
-                          {item.status}
-                        </span>
                       </div>
                     </motion.div>
                   ))}

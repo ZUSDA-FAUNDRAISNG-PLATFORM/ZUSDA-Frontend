@@ -1,12 +1,10 @@
 import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
-import { useInvolvement } from "./InvolvementDialogs";
 import helpingHands from "@/assets/helping-hands.jpg";
 
 const CTASection = () => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
-  const { open } = useInvolvement();
 
   return (
     <section className="py-24 bg-navy relative overflow-hidden">
@@ -33,14 +31,6 @@ const CTASection = () => {
             Be part of something eternal. Whether through prayer, giving, or going —
             your response matters. Join us in Kinungi this December.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => open("give")}
-              className="bg-gradient-gold text-secondary-foreground font-bold px-10 py-4 rounded-full text-lg hover:opacity-90 transition-opacity animate-pulse-gold"
-            >
-              Answer the Call
-            </button>
-          </div>
         </motion.div>
       </div>
     </section>

@@ -6,11 +6,20 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { z } from "zod";
+import { useCms } from "@/cms/CmsProvider";
 import { submitMpesaDonation, submitMissionaryRegistration, submitPrayerSignup } from "@/api/involvement";
 
 type DialogKind = "pray" | "give" | "go" | null;
 
-const DialogCtx = createContext<{ open: (k: DialogKind) => void; notifyContribution: (amount: number) => void }>({ open: () => {}, notifyContribution: () => {} });
+export interface GiveOptions {
+  projectId?: number | null;
+  causeName?: string | null;
+}
+
+const DialogCtx = createContext<{
+  open: (k: DialogKind, options?: GiveOptions) => void;
+  notifyContribution: (amount: number, seed?: string) => void;
+}>({ open: () => {}, notifyContribution: () => {} });
 
 export const useInvolvement = () => useContext(DialogCtx);
 
@@ -20,19 +29,31 @@ const nameSchema = z.string().trim().min(2, "Name too short").max(100);
 
 export const InvolvementProvider = ({ children }: { children: ReactNode }) => {
   const [kind, setKind] = useState<DialogKind>(null);
-  const [refreshTick, setRefreshTick] = useState(0);
-  const close = () => setKind(null);
+  const [giveOptions, setGiveOptions] = useState<GiveOptions>({});
+  const close = () => {
+    setKind(null);
+    setGiveOptions({});
+  };
 
-  const notifyContribution = (amount: number) => {
-    window.dispatchEvent(new CustomEvent("zusda:contribution", { detail: { amount } }));
-    setRefreshTick((v) => v + 1);
+  const open = (k: DialogKind, options?: GiveOptions) => {
+    setGiveOptions(options ?? {});
+    setKind(k);
+  };
+
+  const notifyContribution = (amount: number, seed?: string) => {
+    window.dispatchEvent(new CustomEvent("zusda:contribution", { detail: { amount, seed } }));
   };
 
   return (
-    <DialogCtx.Provider value={{ open: setKind, notifyContribution }}>
+    <DialogCtx.Provider value={{ open, notifyContribution }}>
       {children}
       <PrayDialog open={kind === "pray"} onClose={close} />
-      <GiveDialog open={kind === "give"} onClose={close} />
+      <GiveDialog
+        open={kind === "give"}
+        onClose={close}
+        projectId={giveOptions.projectId}
+        causeName={giveOptions.causeName}
+      />
       <GoDialog open={kind === "go"} onClose={close} />
     </DialogCtx.Provider>
   );
@@ -77,7 +98,7 @@ const PrayDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
       <DialogContent>
         <DialogHeader>
           <DialogTitle className="font-display text-2xl text-navy">Join the Prayer Team</DialogTitle>
-          <DialogDescription>Stand with us in intercession for Kinungi Mission 2026.</DialogDescription>
+          <DialogDescription>Stand with us in intercession for Kinamba Mission 2026.</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div><Label>Full Name</Label><Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} maxLength={100} /></div>
@@ -93,10 +114,24 @@ const PrayDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
   );
 };
 
-const GiveDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
+const GiveDialog = ({
+  open,
+  onClose,
+  projectId,
+  causeName,
+}: {
+  open: boolean;
+  onClose: () => void;
+  projectId?: number | null;
+  causeName?: string | null;
+}) => {
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ full_name: "", phone: "", amount: "" });
   const { notifyContribution } = useInvolvement();
+  const { state } = useCms();
+  const cause = causeName?.trim() || "this outreach";
+  const paybill = state.site.paybill || "247247";
+  const account = state.site.paybillAccount || "593021";
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -114,9 +149,9 @@ const GiveDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
         donor_name: form.full_name.trim() || "Anonymous",
         phone: form.phone.trim(),
         amount: Number(form.amount),
-        project_id: 1,
+        project_id: projectId ?? 1,
       });
-      notifyContribution(Number(form.amount));
+      notifyContribution(Number(form.amount), form.phone.trim() || form.full_name.trim());
       toast.success("M-Pesa prompt sent! Enter your PIN on your phone to complete the donation.");
       setForm({ full_name: "", phone: "", amount: "" });
       onClose();
@@ -131,18 +166,18 @@ const GiveDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-navy">Make a Contribution</DialogTitle>
-          <DialogDescription>Your gift fuels the mission. Every shilling reaches souls.</DialogDescription>
+          <DialogTitle className="font-display text-2xl text-navy">Support {cause}</DialogTitle>
+          <DialogDescription>Your gift is applied to this specific outreach. Every shilling is accounted for.</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div><Label>Full Name (optional)</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} maxLength={100} /></div>
           <div><Label>M-Pesa Phone Number</Label><Input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0712345678" /></div>
           <div><Label>Amount (KES)</Label><Input required type="number" min={1} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="500" /></div>
           <div className="text-xs text-muted-foreground bg-cream rounded-md p-3">
-            You can also send directly via M-Pesa Paybill <strong>247247</strong>, Account: <strong>ZUSDA2026</strong>.
+            You can also send directly via M-Pesa Paybill <strong>{paybill}</strong>, Account: <strong>{account}</strong>.
           </div>
-          <Button type="submit" disabled={loading} className="w-full bg-gradient-gold text-secondary-foreground hover:opacity-90">
-            {loading ? "Processing..." : "Submit Contribution"}
+          <Button type="submit" disabled={loading} className="w-full bg-navy text-white hover:bg-navy-light">
+            {loading ? "Processing..." : `Give toward ${cause}`}
           </Button>
         </form>
       </DialogContent>
@@ -189,7 +224,7 @@ const GoDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) => 
       <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="font-display text-2xl text-navy">Register to Go</DialogTitle>
-          <DialogDescription>Join us in Kinungi, 13–27 December 2026.</DialogDescription>
+          <DialogDescription>Join us in Kinamba, 13–27 December 2026.</DialogDescription>
         </DialogHeader>
         <form onSubmit={submit} className="space-y-4">
           <div><Label>Full Name</Label><Input required value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} maxLength={100} /></div>

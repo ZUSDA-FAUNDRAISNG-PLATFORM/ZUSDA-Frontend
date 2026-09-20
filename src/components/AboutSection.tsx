@@ -1,73 +1,61 @@
-import { motion } from "framer-motion";
-import { useInView } from "framer-motion";
-import { useRef } from "react";
-import { Heart, BookOpen, Users } from "lucide-react";
-import helpingHands from "@/assets/helping-hands.jpg";
+import { Heart, BookOpen, Users, Cross } from "lucide-react";
+import MotivationMarquee from "@/components/MotivationMarquee";
+import { useCms, usePublished } from "@/cms/CmsProvider";
+
+const icons = {
+  book: BookOpen,
+  heart: Heart,
+  users: Users,
+  cross: Cross,
+};
 
 const AboutSection = () => {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+  const { state } = useCms();
+  const values = usePublished("values");
 
   return (
-    <section id="about" className="py-24 bg-cream">
-      <div className="container mx-auto px-4" ref={ref}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.6 }}
-          className="text-center max-w-3xl mx-auto mb-16"
-        >
-          <p className="text-gold-dark uppercase tracking-[0.2em] text-sm font-semibold mb-3">About the Mission</p>
-          <h2 className="font-display text-3xl md:text-4xl font-bold text-navy mb-6">
-            A Faith-Driven Outreach Initiative
-          </h2>
-          <p className="text-muted-foreground text-lg leading-relaxed">
-            Grounded in the Great Commission (Matthew 28:19), the ZUSDA Evangelical Mission 2026
-            seeks to spread the Gospel, reach souls, and demonstrate God's love through evangelism
-            and service in Kinungi, Naivasha.
-          </p>
-        </motion.div>
+    <section id="about" className="bg-cream py-16 sm:py-24">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto mb-14 max-w-3xl text-center">
+          <p className="mb-3 text-sm font-medium text-gold-dark">{state.site.aboutEyebrow}</p>
+          <h2 className="mb-5 font-display text-3xl font-bold text-navy md:text-4xl">{state.site.aboutTitle}</h2>
+          <p className="text-base leading-relaxed text-muted-foreground sm:text-lg">{state.site.aboutBody}</p>
+        </div>
 
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+        <div className="mx-auto mb-12 grid max-w-5xl gap-6 md:grid-cols-2">
           {[
-            { icon: BookOpen, title: "Spread the Word", desc: "Sharing the Gospel message of hope, restoration, and God's unconditional love with the community." },
-            { icon: Heart, title: "Transform Lives", desc: "Through personal encounters and acts of service, we aim to bring lasting transformation and hope." },
-            { icon: Users, title: "Build Community", desc: "Uniting believers across regions to work together in purpose, prayer, and fellowship." },
-          ].map((item, i) => (
-            <motion.div
-              key={item.title}
-              initial={{ opacity: 0, y: 30 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.6, delay: 0.2 + i * 0.15 }}
-              className="bg-background rounded-2xl p-8 shadow-soft text-center group hover:shadow-elevated transition-shadow"
-            >
-              <div className="w-14 h-14 rounded-xl bg-gold/10 flex items-center justify-center mx-auto mb-5 group-hover:bg-gold/20 transition-colors">
-                <item.icon className="text-gold-dark" size={26} />
-              </div>
-              <h3 className="font-display text-xl font-semibold text-navy mb-3">{item.title}</h3>
-              <p className="text-muted-foreground leading-relaxed">{item.desc}</p>
-            </motion.div>
+            { title: state.site.missionTitle, body: state.site.missionBody },
+            { title: state.site.visionTitle, body: state.site.visionBody },
+          ].map((item) => (
+            <article key={item.title} className="rounded-xl border border-navy/10 bg-white p-6 sm:p-8">
+              <h3 className="mb-3 font-display text-2xl font-semibold text-navy">{item.title}</h3>
+              <p className="leading-relaxed text-muted-foreground">{item.body}</p>
+            </article>
           ))}
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={inView ? { opacity: 1, scale: 1 } : {}}
-          transition={{ duration: 0.8, delay: 0.5 }}
-          className="mt-16 max-w-5xl mx-auto rounded-3xl overflow-hidden shadow-elevated relative group"
-        >
-          <img
-            src={helpingHands}
-            alt="Believers reaching out to help one another at sunset"
-            loading="lazy"
-            className="w-full h-72 md:h-96 object-cover transition-transform duration-700 group-hover:scale-105"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/20 to-transparent flex items-end">
-            <p className="font-display italic text-primary-foreground text-xl md:text-2xl p-8 max-w-2xl">
-              "Bear one another's burdens, and so fulfill the law of Christ." — Galatians 6:2
-            </p>
-          </div>
-        </motion.div>
+        {values.length > 0 ? (
+          <p className="mb-6 text-center text-sm font-medium text-gold-dark">Core values</p>
+        ) : null}
+
+        <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-3">
+          {values.map((item) => {
+            const Icon = icons[item.icon] || Heart;
+            return (
+              <div key={item.id} className="rounded-xl border border-navy/10 bg-white p-6 text-center sm:p-8">
+                <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-gold/10">
+                  <Icon className="text-gold-dark" size={22} />
+                </div>
+                <h3 className="mb-3 font-display text-xl font-semibold text-navy">{item.title}</h3>
+                <p className="leading-relaxed text-muted-foreground">{item.description}</p>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <div className="mt-16">
+        <MotivationMarquee />
       </div>
     </section>
   );

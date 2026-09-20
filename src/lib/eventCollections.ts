@@ -29,7 +29,7 @@ const MISSION_2026: EventCollection = {
   eyebrow: "Mission Details",
   heading: "When & Where",
   posterUrl: null,
-  location: "Kinungi, Naivasha, Nakuru County",
+  location: "Kinamba, Naivasha, Nakuru County",
   startDate: "2026-12-13",
   endDate: "2026-12-27",
   durationLabel: "15 Days of Evangelism",

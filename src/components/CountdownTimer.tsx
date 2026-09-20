@@ -31,15 +31,15 @@ const CountdownTimer = ({ targetDate }: Props) => {
   ];
 
   return (
-    <div className="flex justify-center gap-3 md:gap-6">
+    <div className="flex justify-center gap-2 sm:gap-3 md:gap-5">
       {units.map((u) => (
         <div key={u.label} className="flex flex-col items-center">
-          <div className="bg-navy/5 backdrop-blur-sm border border-gold/30 rounded-xl w-16 h-16 md:w-20 md:h-20 flex items-center justify-center">
-            <span className="font-display text-2xl md:text-3xl font-bold text-navy">
+          <div className="flex h-14 w-14 items-center justify-center rounded-lg border border-navy/10 bg-white/80 sm:h-16 sm:w-16 md:h-20 md:w-20">
+            <span className="font-display text-xl font-bold text-navy sm:text-2xl md:text-3xl">
               {String(u.value).padStart(2, "0")}
             </span>
           </div>
-          <span className="text-xs text-navy/60 mt-2 uppercase tracking-wider">{u.label}</span>
+          <span className="mt-2 text-xs uppercase tracking-wide text-navy/60">{u.label}</span>
         </div>
       ))}
     </div>

@@ -11,6 +11,15 @@ import {
   type EventCollectionDTO,
 } from "@/api/collections";
 import { resolveAssetUrl } from "@/api/client";
+import {
+  createLocalCollection,
+  fileToDataUrl,
+  loadLocalCollections,
+  removeLocalCollection,
+  saveLocalCollections,
+  setLocalPoster,
+  setLocalPrimary,
+} from "@/lib/localCollections";
 
 interface Ctx {
   collections: EventCollectionDTO[];
@@ -22,7 +31,7 @@ interface Ctx {
   addCollection: (name: string) => Promise<void>;
   removeCollection: (id: number) => Promise<void>;
   setPrimary: (id: number) => Promise<void>;
-  uploadPoster: (file: File) => Promise<void>;
+  uploadPoster: (id: number, file: File) => Promise<void>;
 }
 
 const EventCollectionsContext = createContext<Ctx | null>(null);
@@ -38,23 +47,25 @@ export function EventCollectionsProvider({ children }: { children: ReactNode }) 
   const [collections, setCollections] = useState<EventCollectionDTO[]>([]);
   const [activeId, setActiveId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [useLocal, setUseLocal] = useState(false);
+
+  const applyCollections = (items: EventCollectionDTO[], preferredId?: number | null) => {
+    const normalized = items.map(toViewModel);
+    setCollections(normalized);
+    const preferred = preferredId != null ? normalized.find((item) => item.id === preferredId) : null;
+    const primary = normalized.find((item) => item.isPrimary);
+    setActiveId(preferred?.id ?? primary?.id ?? normalized[0]?.id ?? null);
+  };
 
   const refresh = async () => {
     setIsLoading(true);
     try {
       const [items, primary] = await Promise.all([listCollections(), getPrimaryCollection().catch(() => null)]);
-      const normalized = items.map(toViewModel);
-      setCollections(normalized);
-      if (primary) {
-        setActiveId(primary.id);
-      } else if (normalized.length) {
-        setActiveId(normalized[0].id);
-      } else {
-        setActiveId(null);
-      }
-    } catch (error) {
-      console.error(error);
-      toast.error("Unable to load collections from the server.");
+      setUseLocal(false);
+      applyCollections(items, primary?.id);
+    } catch {
+      setUseLocal(true);
+      applyCollections(loadLocalCollections());
     } finally {
       setIsLoading(false);
     }
@@ -71,6 +82,13 @@ export function EventCollectionsProvider({ children }: { children: ReactNode }) 
 
   const updateActiveCollection = async (patch: Partial<EventCollectionDTO>) => {
     if (!activeCollection?.id) return;
+    if (useLocal) {
+      const next = collections.map((item) => (item.id === activeCollection.id ? { ...item, ...patch } : item));
+      saveLocalCollections(next);
+      applyCollections(next, activeCollection.id);
+      toast.success("Collection updated.");
+      return;
+    }
     const updated = await updateCollection(activeCollection.id, patch);
     const next = collections.map((c) => (c.id === updated.id ? toViewModel(updated) : c));
     setCollections(next);
@@ -79,37 +97,83 @@ export function EventCollectionsProvider({ children }: { children: ReactNode }) 
   };
 
   const addCollection = async (name: string) => {
-    const created = await createCollection({ name });
-    const next = [...collections, toViewModel(created)];
-    setCollections(next);
-    setActiveId(created.id);
-    toast.success("Collection created.");
+    if (useLocal) {
+      const created = createLocalCollection(name, collections);
+      applyCollections([...collections, created], created.id);
+      toast.success("Outreach added.");
+      return;
+    }
+    try {
+      const created = await createCollection({ name });
+      const next = [...collections, toViewModel(created)];
+      setCollections(next);
+      setActiveId(created.id);
+      toast.success("Collection created.");
+    } catch {
+      const created = createLocalCollection(name, collections);
+      setUseLocal(true);
+      applyCollections([...collections, created], created.id);
+      toast.success("Outreach saved locally until the admin server is ready.");
+    }
   };
 
   const removeCollection = async (id: number) => {
+    if (useLocal) {
+      const next = removeLocalCollection(id, collections);
+      applyCollections(next);
+      toast.success("Outreach removed.");
+      return;
+    }
     await deleteCollection(id);
     const next = collections.filter((c) => c.id !== id);
     setCollections(next);
-    if (activeId === id) {
-      setActiveId(next[0]?.id ?? null);
-    }
+    if (activeId === id) setActiveId(next[0]?.id ?? null);
     toast.success("Collection removed.");
   };
 
   const setPrimary = async (id: number) => {
-    const updated = await setPrimaryCollection(id);
-    const next = collections.map((c) => (c.id === updated.id ? toViewModel(updated) : { ...c, isPrimary: false }));
-    setCollections(next);
-    setActiveId(updated.id);
-    toast.success("Primary collection updated.");
+    if (useLocal) {
+      const updated = setLocalPrimary(id, collections);
+      applyCollections(loadLocalCollections(), updated?.id);
+      toast.success("Featured outreach updated.");
+      return;
+    }
+    try {
+      const updated = await setPrimaryCollection(id);
+      const next = collections.map((c) => (c.id === updated.id ? toViewModel(updated) : { ...c, isPrimary: false }));
+      setCollections(next);
+      setActiveId(updated.id);
+      toast.success("Primary collection updated.");
+    } catch {
+      const updated = setLocalPrimary(id, collections);
+      setUseLocal(true);
+      applyCollections(loadLocalCollections(), updated?.id);
+      toast.success("Featured outreach updated locally.");
+    }
   };
 
-  const uploadPosterForActive = async (file: File) => {
-    if (!activeCollection?.id) return;
-    const updated = await uploadPoster(activeCollection.id, file);
-    const next = collections.map((c) => (c.id === updated.id ? toViewModel(updated) : c));
-    setCollections(next);
-    toast.success("Poster uploaded.");
+  const uploadPosterFor = async (id: number, file: File) => {
+    const saveLocally = async () => {
+      const posterUrl = await fileToDataUrl(file);
+      const updated = setLocalPoster(id, posterUrl, collections);
+      applyCollections(loadLocalCollections(), updated.id);
+      toast.success("Poster updated.");
+    };
+
+    if (useLocal) {
+      await saveLocally();
+      return;
+    }
+
+    try {
+      const updated = await uploadPoster(id, file);
+      setCollections((current) => current.map((c) => (c.id === updated.id ? toViewModel(updated) : c)));
+      toast.success("Poster updated.");
+    } catch {
+      await saveLocally();
+      setUseLocal(true);
+      toast.success("Poster saved locally until the admin server is ready.");
+    }
   };
 
   return (
@@ -124,7 +188,7 @@ export function EventCollectionsProvider({ children }: { children: ReactNode }) 
         addCollection,
         removeCollection,
         setPrimary,
-        uploadPoster: uploadPosterForActive,
+        uploadPoster: uploadPosterFor,
       }}
     >
       {children}

@@ -9,7 +9,7 @@ export const useScrollNavigation = () => {
       setScrolled(window.scrollY > 50);
 
       // Detect active section
-      const sections = ["home", "about", "details", "theme", "involved", "committee"];
+      const sections = ["home", "about", "theme", "announcements", "events", "involved", "committee", "gallery"];
       for (const sectionId of sections) {
         const element = document.getElementById(sectionId);
         if (element) {

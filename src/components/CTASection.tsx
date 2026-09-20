@@ -1,37 +1,25 @@
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
-import helpingHands from "@/assets/helping-hands.jpg";
+import { useCms } from "@/cms/CmsProvider";
 
 const CTASection = () => {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+  const { state } = useCms();
+  const lines = state.site.ctaTitle.split("\n");
 
   return (
-    <section className="py-24 bg-navy relative overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-20"
-        style={{ backgroundImage: `url(${helpingHands})` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-navy/90 via-navy/80 to-navy" />
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-gold rounded-full blur-3xl" />
-      </div>
-      <div className="container mx-auto px-4 relative z-10" ref={ref}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          className="max-w-3xl mx-auto text-center"
-        >
-          <h2 className="font-display text-3xl md:text-5xl font-bold text-primary-foreground mb-6 leading-tight">
-            God is Calling.<br />
-            The Mission is Ready.<br />
-            <span className="text-gradient-gold">You Are Invited.</span>
+    <section className="relative overflow-hidden bg-navy py-16 sm:py-24">
+      <div className="absolute inset-0 bg-cover bg-center opacity-15" style={{ backgroundImage: `url(${state.site.ctaImageUrl})` }} />
+      <div className="absolute inset-0 bg-navy/85" />
+      <div className="container relative z-10 mx-auto px-4">
+        <div className="mx-auto max-w-3xl text-center">
+          <h2 className="mb-6 font-display text-3xl font-bold leading-tight text-white md:text-5xl">
+            {lines.map((line, index) => (
+              <span key={line}>
+                {index === lines.length - 1 ? <span className="text-gold">{line}</span> : line}
+                {index < lines.length - 1 ? <br /> : null}
+              </span>
+            ))}
           </h2>
-          <p className="text-primary-foreground/60 text-lg mb-10 max-w-xl mx-auto">
-            Be part of something eternal. Whether through prayer, giving, or going —
-            your response matters. Join us in Kinungi this December.
-          </p>
-        </motion.div>
+          <p className="mx-auto max-w-xl text-lg text-white/70">{state.site.ctaBody}</p>
+        </div>
       </div>
     </section>
   );

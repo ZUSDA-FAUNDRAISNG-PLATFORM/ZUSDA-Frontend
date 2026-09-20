@@ -7,24 +7,25 @@ import {
   Target,
   HandCoins,
   ArrowRight,
-  Sparkles,
-  Users,
   HeartHandshake,
   Clock3,
   BadgeCheck,
   Globe2,
-  XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useInvolvement } from "./InvolvementDialogs";
+import { useEventCollections } from "@/hooks/useEventCollections";
+import { useCms, usePublished } from "@/cms/CmsProvider";
+import { useLiveViewers } from "@/hooks/useLiveViewers";
 import { apiGet } from "@/api/client";
+import { getRecentContributions } from "@/api/contributions";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
+  addLocalContribution,
+  donorHash,
+  loadLocalContributions,
+  sumLocalContributions,
+  type LocalContribution,
+} from "@/lib/localContributions";
 
 interface ProjectSummary {
   id: number;
@@ -36,43 +37,12 @@ interface ProjectSummary {
 
 interface RecentContribution {
   id: number;
-  donor_name: string;
+  hash: string;
   amount: number;
-  status: string;
   created_at: string;
 }
 
-interface LiveNotification {
-  id: number;
-  donorName: string;
-  amount: number;
-  createdAt: string;
-}
-
-const DEFAULT_TARGET = 416000;
-const VIEWER_PRESENCE_KEY = "zusda:viewers";
-const VIEWER_TTL_MS = 12000;
-
-const formatRelativeTime = (timestamp: string) => {
-  const parsed = new Date(timestamp);
-  if (Number.isNaN(parsed.getTime())) {
-    return "just now";
-  }
-
-  const diffMs = Date.now() - parsed.getTime();
-  const diffMinutes = Math.floor(diffMs / 60000);
-
-  if (diffMinutes < 1) return "just now";
-  if (diffMinutes < 60) return `${diffMinutes}m ago`;
-
-  const diffHours = Math.floor(diffMinutes / 60);
-  if (diffHours < 24) return `${diffHours}h ago`;
-
-  const diffDays = Math.floor(diffHours / 24);
-  if (diffDays < 7) return `${diffDays}d ago`;
-
-  return new Intl.DateTimeFormat("en-KE", { dateStyle: "medium", timeStyle: "short" }).format(parsed);
-};
+const MILESTONE_STEPS = [25, 50, 75, 100];
 
 const CountUpValue = ({ value, prefix = "", className = "" }: { value: number; prefix?: string; className?: string }) => {
   const [displayValue, setDisplayValue] = useState(value);
@@ -84,21 +54,14 @@ const CountUpValue = ({ value, prefix = "", className = "" }: { value: number; p
     const duration = 900;
 
     const tick = (currentTime: number) => {
-      if (cancelled) {
-        return;
-      }
-
+      if (cancelled) return;
       const progress = Math.min(1, (currentTime - startTime) / duration);
       const eased = 1 - Math.pow(1 - progress, 3);
       setDisplayValue(Math.round(startValue + (value - startValue) * eased));
-
-      if (progress < 1) {
-        requestAnimationFrame(tick);
-      }
+      if (progress < 1) requestAnimationFrame(tick);
     };
 
     requestAnimationFrame(tick);
-
     return () => {
       cancelled = true;
     };
@@ -107,19 +70,42 @@ const CountUpValue = ({ value, prefix = "", className = "" }: { value: number; p
   return <span className={className}>{`${prefix}${displayValue.toLocaleString("en-KE")}`}</span>;
 };
 
+function mergeRecent(apiItems: RecentContribution[], localItems: LocalContribution[]): RecentContribution[] {
+  const merged = [...localItems, ...apiItems];
+  const seen = new Set<number>();
+  return merged
+    .filter((item) => {
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    })
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 3);
+}
+
 const BudgetSection = () => {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
   const { open } = useInvolvement();
-  const [project, setProject] = useState<ProjectSummary | null>(null);
-  const [recent, setRecent] = useState<RecentContribution[]>([]);
+  const { state } = useCms();
+  const posters = usePublished("posters");
+  const featured = posters.find((item) => item.featured) ?? posters[0];
+  const { activeCollection } = useEventCollections();
+  const selectedProjectId = featured?.projectId ?? activeCollection?.projectId ?? null;
+  const [apiRaised, setApiRaised] = useState(0);
+  const [recent, setRecent] = useState<RecentContribution[]>(() => loadLocalContributions().slice(0, 3));
   const [loading, setLoading] = useState(true);
-  const [liveNotifications, setLiveNotifications] = useState<LiveNotification[]>([]);
-  const [viewerCount, setViewerCount] = useState(30);
   const [pulseAmount, setPulseAmount] = useState<number | null>(null);
-  const viewerIdRef = useRef<string | null>(null);
-  const previousIdsRef = useRef<Set<number>>(new Set());
-  const initialLoadRef = useRef(true);
+  const liveErrorToastRef = useRef(false);
+  const previousIdsRef = useRef<Set<number>>(new Set(loadLocalContributions().map((item) => item.id)));
+  const selectedProjectIdRef = useRef<number | null>(selectedProjectId);
+  const viewerCount = useLiveViewers();
+  selectedProjectIdRef.current = selectedProjectId;
+
+  const target = Number(state.site.budgetGoal) > 0 ? Number(state.site.budgetGoal) : 416000;
+  const paybill = state.site.paybill || "247247";
+  const account = state.site.paybillAccount || "593021";
+  const wordOfFaith = state.site.wordOfFaith || "Every shilling contributed is a seed sown in the Kingdom of God.";
 
   const copy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -128,158 +114,77 @@ const BudgetSection = () => {
 
   const refreshData = async () => {
     try {
+      const projectId = selectedProjectIdRef.current;
       const [projectData, recentData] = await Promise.all([
         apiGet<ProjectSummary[]>("/projects/"),
-        apiGet<RecentContribution[]>("/contributions/recent?limit=6"),
+        getRecentContributions({ projectId: projectId ?? undefined, limit: 3 }),
       ]);
 
-      const activeProject = Array.isArray(projectData) && projectData[0] ? projectData[0] : null;
-      const nextRecent = recentData || [];
+      const projects = Array.isArray(projectData) ? projectData : [];
+      const activeProject =
+        (projectId ? projects.find((item) => item.id === projectId) : undefined) ?? projects[0] ?? null;
+      const apiRecent = (recentData || []).map((item) => ({
+        id: item.id,
+        hash: donorHash(`${item.id}:${item.created_at}`),
+        amount: item.amount,
+        created_at: item.created_at,
+      }));
+      const nextRecent = mergeRecent(apiRecent, loadLocalContributions());
       const incoming = nextRecent.filter((item) => !previousIdsRef.current.has(item.id));
 
-      if (!initialLoadRef.current && incoming.length > 0) {
+      if (incoming.length > 0 && previousIdsRef.current.size > 0) {
         const newest = incoming[0];
-        setLiveNotifications((current) => [
-          {
-            id: newest.id,
-            donorName: newest.donor_name?.trim() || "Anonymous donor",
-            amount: newest.amount,
-            createdAt: newest.created_at,
-          },
-          ...current,
-        ].slice(0, 3));
         setPulseAmount(newest.amount);
-        setViewerCount((current) => current + 1);
-        toast.success(`${newest.donor_name?.trim() || "Anonymous donor"} just donated KSH ${newest.amount.toLocaleString("en-KE")}`);
       }
 
-      initialLoadRef.current = false;
       previousIdsRef.current = new Set(nextRecent.map((item) => item.id));
-      setProject(activeProject);
+      setApiRaised(activeProject?.current_amount ?? 0);
       setRecent(nextRecent);
     } catch {
-      toast.error("Could not load live contribution data");
+      setRecent(loadLocalContributions().slice(0, 3));
+      if (!liveErrorToastRef.current) {
+        liveErrorToastRef.current = true;
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    refreshData();
-    const interval = window.setInterval(refreshData, 8000);
-    const handler = () => {
-      refreshData();
-    };
-
-    const syncViewerPresence = () => {
-      const now = Date.now();
-      const entry = { id: viewerIdRef.current || `${now}-${Math.random().toString(36).slice(2)}`, updatedAt: now };
-      viewerIdRef.current = entry.id;
-
-      const raw = window.localStorage.getItem(VIEWER_PRESENCE_KEY);
-      const existing = raw ? (JSON.parse(raw) as Array<{ id: string; updatedAt: number }>) : [];
-      const filtered = existing.filter((item) => item.id !== entry.id && now - item.updatedAt < VIEWER_TTL_MS);
-      filtered.push(entry);
-      window.localStorage.setItem(VIEWER_PRESENCE_KEY, JSON.stringify(filtered));
-      setViewerCount(filtered.length);
-    };
-
-    syncViewerPresence();
-    const presenceInterval = window.setInterval(syncViewerPresence, 4000);
-    const cleanupPresence = () => {
-      const raw = window.localStorage.getItem(VIEWER_PRESENCE_KEY);
-      if (!raw || !viewerIdRef.current) {
-        return;
+    void refreshData();
+    const interval = window.setInterval(() => void refreshData(), 4000);
+    const handler = (event: Event) => {
+      const detail = (event as CustomEvent<{ amount?: number; seed?: string }>).detail;
+      const amount = Number(detail?.amount);
+      if (amount > 0) {
+        const gift = addLocalContribution(amount, detail?.seed);
+        setRecent((current) => mergeRecent(current, [gift]));
+        setPulseAmount(amount);
       }
-
-      const existing = JSON.parse(raw) as Array<{ id: string; updatedAt: number }>;
-      const filtered = existing.filter((item) => item.id !== viewerIdRef.current);
-      window.localStorage.setItem(VIEWER_PRESENCE_KEY, JSON.stringify(filtered));
+      void refreshData();
     };
 
     window.addEventListener("zusda:contribution", handler);
-    window.addEventListener("beforeunload", cleanupPresence);
     return () => {
       window.clearInterval(interval);
-      window.clearInterval(presenceInterval);
-      cleanupPresence();
       window.removeEventListener("zusda:contribution", handler);
-      window.removeEventListener("beforeunload", cleanupPresence);
     };
   }, []);
 
-  const amountLabel = useMemo(() => {
-    const value = project?.current_amount ?? 0;
-    return `KSH ${value.toLocaleString("en-KE")}`;
-  }, [project]);
+  useEffect(() => {
+    void refreshData();
+  }, [selectedProjectId]);
 
-  const targetLabel = useMemo(() => {
-    return `KSH ${((project?.target_amount ?? DEFAULT_TARGET)).toLocaleString("en-KE")}`;
-  }, [project]);
-
-  const raised = project?.current_amount ?? 0;
-  const target = project?.target_amount ?? DEFAULT_TARGET;
+  const raised = Math.max(apiRaised, sumLocalContributions());
   const remaining = Math.max(target - raised, 0);
   const progressPercent = target > 0 ? Math.min(Math.round((raised / target) * 100), 100) : 0;
-  const milestonePercent = 25;
+  const milestonePercent = MILESTONE_STEPS.find((step) => progressPercent < step) ?? 100;
   const milestoneAmount = Math.max(target * (milestonePercent / 100) - raised, 0);
-  const averageDonation = recent.length > 0 ? Math.round(raised / recent.length) : 0;
-  const largestDonation = recent.reduce((max, item) => Math.max(max, item.amount), 0);
-  const milestoneSteps = [0, 25, 50, 75, 100];
-
-  const formatContributionDate = (iso: string) => {
-    const d = new Date(iso);
-    const datePart = d
-      .toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" })
-      .toUpperCase()
-      .replace(/,/g, "");
-    const timePart = d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
-    return `${datePart} · ${timePart}`;
-  };
-
-  const statusStyles: Record<string, string> = {
-    success: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-    failed: "bg-red-500/15 text-red-400 border-red-500/30",
-    pending: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  };
-  const getStatusStyle = (status: string) =>
-    statusStyles[status?.toLowerCase()] ?? "bg-navy/40 text-primary-foreground/60 border-gold/20";
-
-  const statusAccentBar: Record<string, string> = {
-    success: "bg-emerald-500",
-    failed: "bg-red-500",
-    pending: "bg-amber-500",
-  };
-  const getStatusAccentBar = (status: string) =>
-    statusAccentBar[status?.toLowerCase()] ?? "bg-gold/40";
-
-  const statusIconWrap: Record<string, string> = {
-    success: "border-emerald-500/30 bg-emerald-500/10 text-emerald-400",
-    failed: "border-red-500/30 bg-red-500/10 text-red-400",
-    pending: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-  };
-  const getStatusIconWrap = (status: string) =>
-    statusIconWrap[status?.toLowerCase()] ?? "border-gold/20 bg-navy/60 text-gold";
-
-  const getStatusIcon = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "success":
-        return <BadgeCheck size={16} />;
-      case "failed":
-        return <XCircle size={16} />;
-      case "pending":
-        return <Clock3 size={16} />;
-      default:
-        return <Clock3 size={16} />;
-    }
-  };
+  const targetLabel = useMemo(() => `KSH ${target.toLocaleString("en-KE")}`, [target]);
+  const causeName = featured?.title || activeCollection?.name || "the Mission";
 
   return (
-    <section className="relative overflow-hidden bg-navy py-20">
-      <div className="pointer-events-none absolute inset-0 opacity-10">
-        <div className="absolute left-1/4 top-1/2 h-72 w-72 rounded-full bg-gold blur-3xl" />
-        <div className="absolute right-0 top-0 h-64 w-64 rounded-full bg-gold/20 blur-3xl" />
-      </div>
+    <section id="budget" className="relative scroll-mt-28 bg-navy py-16 sm:py-20">
       <div className="container relative z-10 mx-auto px-4" ref={ref}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -287,7 +192,7 @@ const BudgetSection = () => {
           className="mx-auto max-w-6xl"
         >
           <div className="mx-auto mb-8 max-w-3xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-gold/30 bg-gold/10 px-4 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-gold">
+            <div className="mb-4 inline-flex items-center gap-2 text-xs font-medium text-gold">
               <TrendingUp size={14} />
               Live Mission Budget
             </div>
@@ -298,9 +203,9 @@ const BudgetSection = () => {
                   Loading
                 </span>
               ) : (
-                <div className="flex items-center justify-center gap-3">
+                <div className="flex flex-wrap items-center justify-center gap-3">
                   <span className="text-gold">KSH</span>
-                  <CountUpValue value={raised} prefix="" className="" />
+                  <CountUpValue value={raised} />
                   {pulseAmount ? (
                     <motion.span
                       initial={{ opacity: 0, y: 10 }}
@@ -314,7 +219,7 @@ const BudgetSection = () => {
               )}
             </h2>
             <p className="text-lg text-primary-foreground/70">
-              {project ? `${project.progress_percent}% of the ${targetLabel} target has already been covered` : "Every contribution is an investment in eternity."}
+              {progressPercent}% of the {targetLabel} target has already been covered
             </p>
           </div>
 
@@ -323,40 +228,23 @@ const BudgetSection = () => {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={inView ? { opacity: 1, scale: 1 } : {}}
               transition={{ delay: 0.1 }}
-              className="rounded-3xl border border-gold/20 bg-gradient-to-br from-primary-foreground/10 to-primary-foreground/5 p-6 shadow-2xl shadow-black/10"
+              className="rounded-xl border border-white/10 bg-white/5 p-6"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.25em] text-gold">Campaign Progress</p>
-                  <p className="mt-2 text-sm text-primary-foreground/70">A faithful community is building this mission together.</p>
+                  <p className="text-sm font-medium text-gold">Campaign Progress</p>
+                  <p className="mt-2 text-sm text-primary-foreground/70">Updates automatically as gifts come in and as the goal changes.</p>
                 </div>
-                <div className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">
-                  Live
-                </div>
+                <div className="rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-gold">Live</div>
               </div>
 
-              <div className="mt-6 relative h-7 w-full overflow-hidden rounded-full bg-primary-foreground/10 shadow-inner">
-                <div
-                  className="absolute inset-0 opacity-[0.07]"
-                  style={{
-                    backgroundImage: "repeating-linear-gradient(135deg, #fff 0px, #fff 2px, transparent 2px, transparent 10px)",
-                  }}
-                />
+              <div className="relative mt-6 h-3 w-full overflow-hidden rounded-full bg-white/10">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 1, ease: "easeOut" }}
-                  className="relative h-full rounded-full bg-gradient-gold shadow-lg shadow-gold/30"
-                >
-                  <motion.div
-                    animate={{ x: ["-100%", "200%"] }}
-                    transition={{ duration: 1.8, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/40 to-transparent"
-                  />
-                </motion.div>
-                <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 rounded-full bg-navy/70 px-2 py-0.5 text-[10px] font-bold text-gold-light backdrop-blur-sm">
-                  {progressPercent}%
-                </span>
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                  className="h-full rounded-full bg-gold"
+                />
               </div>
 
               <div className="mt-4 flex items-center justify-between text-sm text-primary-foreground/70">
@@ -365,10 +253,10 @@ const BudgetSection = () => {
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-2">
-                {milestoneSteps.map((step) => (
+                {[0, ...MILESTONE_STEPS].map((step) => (
                   <span
                     key={step}
-                    className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] ${progressPercent >= step ? "border border-gold/30 bg-gold/10 text-gold" : "border border-gold/10 bg-primary-foreground/5 text-primary-foreground/50"}`}
+                    className={`rounded-md px-3 py-1 text-[11px] font-medium ${progressPercent >= step ? "border border-gold/30 bg-gold/10 text-gold" : "border border-white/10 text-white/50"}`}
                   >
                     {step}%
                   </span>
@@ -376,20 +264,19 @@ const BudgetSection = () => {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-navy/30 p-4">
-                  <span className="pointer-events-none absolute -right-6 -top-6 h-16 w-16 rounded-full bg-emerald-400/10 blur-2xl" />
+                <div className="rounded-xl border border-white/10 bg-navy/30 p-4">
                   <div className="flex items-center gap-2 text-gold">
                     <HandCoins size={16} />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">Raised</span>
+                    <span className="text-[11px] font-medium">Raised</span>
                   </div>
                   <p className="mt-2 font-display text-xl font-semibold text-primary-foreground">
-                    <CountUpValue value={raised} prefix="KSH " className="" />
+                    <CountUpValue value={raised} prefix="KSH " />
                   </p>
                 </div>
-                <div className="rounded-2xl border border-gold/15 bg-navy/30 p-4">
+                <div className="rounded-xl border border-gold/15 bg-navy/30 p-4">
                   <div className="flex items-center gap-2 text-gold">
                     <Target size={16} />
-                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em]">Goal</span>
+                    <span className="text-[11px] font-medium">Goal</span>
                   </div>
                   <p className="mt-2 font-display text-xl font-semibold text-primary-foreground">{targetLabel}</p>
                 </div>
@@ -401,37 +288,37 @@ const BudgetSection = () => {
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: 0.15 }}
-                className="rounded-3xl border border-gold/20 bg-primary-foreground/5 p-6 text-left"
+                className="rounded-xl border border-white/10 bg-white/5 p-6 text-left"
               >
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Payment Details</p>
-                  <Sparkles className="text-gold" size={16} />
-                </div>
+                <p className="mb-4 text-xs font-medium text-gold">Payment Details</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <button
-                    onClick={() => copy("247247", "Paybill")}
-                    className="group rounded-2xl border border-gold/20 bg-navy/30 p-4 text-left transition-all hover:-translate-y-1 hover:bg-primary-foreground/10"
+                    type="button"
+                    onClick={() => copy(paybill, "Paybill")}
+                    className="group rounded-xl border border-white/10 bg-navy/30 p-4 text-left transition-colors hover:bg-white/10"
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <p className="text-[11px] uppercase tracking-wider text-primary-foreground/50">Paybill</p>
                       <Copy className="text-gold/60 group-hover:text-gold" size={14} />
                     </div>
-                    <p className="font-display text-2xl font-bold text-primary-foreground">247247</p>
+                    <p className="break-all font-display text-2xl font-bold text-primary-foreground">{paybill}</p>
                   </button>
                   <button
-                    onClick={() => copy("593021", "Account number")}
-                    className="group rounded-2xl border border-gold/20 bg-navy/30 p-4 text-left transition-all hover:-translate-y-1 hover:bg-primary-foreground/10"
+                    type="button"
+                    onClick={() => copy(account, "Account number")}
+                    className="group rounded-xl border border-white/10 bg-navy/30 p-4 text-left transition-colors hover:bg-white/10"
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <p className="text-[11px] uppercase tracking-wider text-primary-foreground/50">Account No.</p>
                       <Copy className="text-gold/60 group-hover:text-gold" size={14} />
                     </div>
-                    <p className="font-display text-2xl font-bold text-primary-foreground">593021</p>
+                    <p className="break-all font-display text-2xl font-bold text-primary-foreground">{account}</p>
                   </button>
                 </div>
                 <button
-                  onClick={() => open("give")}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-gold px-4 py-3 font-semibold text-secondary-foreground transition-all hover:scale-[1.01] hover:shadow-lg hover:shadow-gold/20"
+                  type="button"
+                  onClick={() => open("give", { projectId: selectedProjectId, causeName })}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gold px-4 py-3 font-semibold text-navy transition-colors hover:bg-gold-light"
                 >
                   Give Now
                   <ArrowRight size={16} />
@@ -442,10 +329,10 @@ const BudgetSection = () => {
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: 0.2 }}
-                className="rounded-3xl border border-gold/20 bg-gradient-to-br from-gold/10 to-transparent p-6"
+                className="rounded-xl border border-white/10 bg-white/5 p-6"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Next Milestone</p>
+                  <p className="text-xs font-medium text-gold">Next Milestone</p>
                   <BadgeCheck className="text-gold" size={16} />
                 </div>
                 <div className="mt-4 flex items-center gap-4">
@@ -453,9 +340,13 @@ const BudgetSection = () => {
                     {milestonePercent}%
                   </div>
                   <div>
-                    <p className="text-xl font-semibold text-primary-foreground">{milestonePercent}% of target</p>
+                    <p className="text-xl font-semibold text-primary-foreground">
+                      {progressPercent >= 100 ? "Goal reached" : `${milestonePercent}% of target`}
+                    </p>
                     <p className="mt-1 text-sm text-primary-foreground/70">
-                      {milestoneAmount > 0 ? `Only KSH ${milestoneAmount.toLocaleString("en-KE")} remains.` : "The next milestone has already been reached."}
+                      {progressPercent >= 100
+                        ? "Thank you. The mission goal has been met."
+                        : `KSH ${milestoneAmount.toLocaleString("en-KE")} to the next milestone.`}
                     </p>
                   </div>
                 </div>
@@ -464,72 +355,59 @@ const BudgetSection = () => {
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            {recent.length > 0 ? (
-              <div className="rounded-3xl border border-gold/20 bg-primary-foreground/5 p-4 text-left shadow-lg shadow-black/10">
-                <div className="mb-4 flex items-center justify-between">
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Recent Contributions</p>
-                  <span className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-gold">Live</span>
-                </div>
+            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-left">
+              <div className="mb-4 flex items-center justify-between">
+                <p className="text-xs font-medium text-gold">Recent Contributions</p>
+                <span className="rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-gold">Live</span>
+              </div>
+              {recent.length > 0 ? (
                 <div className="space-y-2">
                   <AnimatePresence mode="popLayout">
-                  {recent.map((item, index) => (
-                    <motion.div
-                      key={item.id}
-                      layout
-                      initial={{ opacity: 0, scale: 0.85, y: -10 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ delay: index * 0.05, type: "spring", stiffness: 420, damping: 18, mass: 0.7 }}
-                      whileHover={{ y: -2 }}
-                      className={`group relative overflow-hidden rounded-2xl border pl-5 pr-4 py-4 transition-all duration-300 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10 ${index === 0 ? "border-gold/30 bg-gold/5" : "border-gold/10 bg-navy/30"}`}
-                    >
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="text-lg md:text-xl font-bold text-primary-foreground leading-none truncate">
+                    {recent.map((item, index) => (
+                      <motion.div
+                        key={item.id}
+                        layout
+                        initial={{ opacity: 0, scale: 0.85, y: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className={`rounded-xl border py-4 pl-5 pr-4 ${index === 0 ? "border-gold/30 bg-gold/5" : "border-white/10 bg-navy/30"}`}
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="font-mono text-sm text-gold">{item.hash}</p>
+                          <p className="font-display text-lg font-bold text-primary-foreground">
                             KSH {item.amount.toLocaleString("en-KE")}
                           </p>
-                          <p className="mt-1.5 text-[11px] uppercase tracking-[0.15em] text-primary-foreground/40">
-                            {formatContributionDate(item.created_at)}
-                          </p>
                         </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))}
                   </AnimatePresence>
                 </div>
-              </div>
-            ) : (
-              <div className="rounded-3xl border border-gold/20 bg-primary-foreground/5 p-6 text-left">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Recent Contributions</p>
-                <p className="mt-3 text-sm text-primary-foreground/70">Be the first to make a kingdom impact today.</p>
-              </div>
-            )}
+              ) : (
+                <p className="text-sm text-primary-foreground/70">Be the first to make a kingdom impact today.</p>
+              )}
+            </div>
 
             <div className="space-y-4">
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.25 }}
-                className="rounded-3xl border border-gold/20 bg-primary-foreground/5 p-6"
+                className="rounded-xl border border-white/10 bg-white/5 p-6"
               >
                 <div className="flex items-center gap-2 text-gold">
                   <HeartHandshake size={16} />
-                  <p className="text-xs font-semibold uppercase tracking-[0.2em]">A Word of Faith</p>
+                  <p className="text-xs font-medium">A Word of Faith</p>
                 </div>
-                <p className="mt-4 font-display text-2xl leading-relaxed text-primary-foreground">
-                  “Every shilling contributed is a seed sown in the Kingdom of God.”
-                </p>
+                <p className="mt-4 font-display text-2xl leading-relaxed text-primary-foreground">“{wordOfFaith}”</p>
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: 0.3 }}
-                className="rounded-3xl border border-gold/20 bg-navy/60 p-6"
+                className="rounded-xl border border-white/10 bg-navy/60 p-6"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-gold">Live viewers</p>
+                    <p className="text-xs font-medium text-gold">Live viewers</p>
                     <motion.p
                       key={viewerCount}
                       initial={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -545,32 +423,11 @@ const BudgetSection = () => {
                 </div>
                 <div className="mt-4 flex items-center gap-2 text-sm text-primary-foreground/70">
                   <Clock3 size={14} className="text-gold" />
-                  <span>Momentum is building in real time</span>
+                  <span>People currently on this site</span>
                 </div>
               </motion.div>
-
             </div>
           </div>
-
-          <AnimatePresence>
-            {liveNotifications.map((notification) => (
-              <motion.div
-                key={notification.id}
-                initial={{ opacity: 0, x: 28, y: -10 }}
-                animate={{ opacity: 1, x: 0, y: 0 }}
-                exit={{ opacity: 0, x: 28, y: -10 }}
-                className="fixed right-4 top-4 z-50 w-72 rounded-2xl border border-gold/20 bg-navy/95 p-4 shadow-2xl shadow-black/30"
-              >
-                <div className="flex items-center gap-2 text-gold">
-                  <Sparkles size={14} />
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.25em]">New donation</p>
-                </div>
-                <p className="mt-3 font-semibold text-primary-foreground">{notification.donorName}</p>
-                <p className="mt-1 text-sm text-primary-foreground/70">KSH {notification.amount.toLocaleString("en-KE")}</p>
-                <p className="mt-2 text-[11px] uppercase tracking-[0.25em] text-primary-foreground/50">{formatRelativeTime(notification.createdAt)}</p>
-              </motion.div>
-            ))}
-          </AnimatePresence>
         </motion.div>
       </div>
     </section>

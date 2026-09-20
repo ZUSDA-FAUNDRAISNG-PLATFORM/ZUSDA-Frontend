@@ -1,180 +1,97 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Menu, X } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { useInvolvement } from "./InvolvementDialogs";
 import { useScrollNavigation } from "@/hooks/useScrollNavigation";
+import { useCms, usePublished } from "@/cms/CmsProvider";
 import sdaLogo from "@/assets/sda-logo.jpg";
-
-const links = [
-  { label: "Home", href: "#home", id: "home" },
-  { label: "About", href: "#about", id: "about" },
-  { label: "Theme", href: "#theme", id: "theme" },
-  { label: "Get Involved", href: "#involved", id: "involved" },
-  { label: "Committee", href: "#committee", id: "committee" },
-];
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
   const { open: openDialog } = useInvolvement();
+  const { state } = useCms();
+  const posters = usePublished("posters");
+  const featured = posters.find((item) => item.featured) ?? posters[0];
   const { scrolled, activeSection } = useScrollNavigation();
+  const events = usePublished("events");
+  const gallery = usePublished("gallery");
+  const announcements = usePublished("announcements");
+
+  const links = [
+    { label: "Home", href: "#home", id: "home" },
+    { label: "About", href: "#about", id: "about" },
+    { label: "Mission", href: "#theme", id: "theme" },
+    ...(announcements.length ? [{ label: "Notices", href: "#announcements", id: "announcements" }] : []),
+    ...(events.length ? [{ label: "Events", href: "#events", id: "events" }] : []),
+    { label: "Get Involved", href: "#involved", id: "involved" },
+    { label: "Committee", href: "#committee", id: "committee" },
+    ...(gallery.length ? [{ label: "Gallery", href: "#gallery", id: "gallery" }] : []),
+  ];
 
   useEffect(() => {
-    if (open) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "unset";
-    }
-
+    document.body.style.overflow = open ? "hidden" : "unset";
     return () => {
       document.body.style.overflow = "unset";
     };
   }, [open]);
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gold/20 transition-all duration-300 ${
-        scrolled ? "bg-cream/95 shadow-lg" : "bg-cream/70 shadow-none"
-      }`}
-    >
-      <div className="w-full px-2 flex items-center justify-between h-28">
-        {/* Logo Section */}
-        <a
-          href="#home"
-          className="flex items-center gap-3 flex-shrink-0 pl-0"
-        >
-          <div className="h-24 w-24 rounded-full overflow-hidden border-2 border-gold shadow-lg bg-white flex-shrink-0">
-            <motion.img
-              src={sdaLogo}
-              alt="Seventh-day Adventist Church logo"
-              className="w-full h-full object-cover"
-              whileHover={{ rotate: 8, scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            />
+    <nav className={`fixed inset-x-0 top-0 z-50 border-b transition-colors duration-300 ${scrolled ? "border-navy/10 bg-cream/95 shadow-sm" : "border-transparent bg-cream/80"}`}>
+      <div className="mx-auto flex h-20 w-full max-w-[1600px] items-center justify-between gap-3 px-4 lg:h-24 lg:px-6">
+        <a href="#home" className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border border-gold/40 bg-white lg:h-16 lg:w-16">
+            <img src={sdaLogo} alt="Seventh-day Adventist Church logo" className="h-full w-full object-cover" />
           </div>
-
-          <div className="leading-tight">
-            <h1 className="font-display text-3xl md:text-4xl font-extrabold text-navy">
-              ZUSDA
-            </h1>
-
-            <p className="text-sm md:text-base text-navy font-bold">
-              Seventh-day Adventist Church • Zetech University
-            </p>
+          <div className="min-w-0 leading-tight">
+            <h1 className="truncate font-display text-xl font-bold text-navy sm:text-2xl lg:text-3xl">{state.site.churchName}</h1>
+            <p className="hidden truncate text-sm font-medium text-navy/70 md:block">{state.site.tagline}</p>
           </div>
         </a>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-7 pr-4">
+        <div className="hidden items-center gap-3 overflow-x-auto pr-2 lg:flex xl:gap-5 2xl:gap-6">
           {links.map((link) => (
-            <motion.a
-              key={link.href}
-              href={link.href}
-              className={`text-base font-extrabold transition-colors relative group ${
-                activeSection === link.id
-                  ? "text-gold"
-                  : "text-navy hover:text-gold"
-              }`}
-              whileHover={{ y: -2 }}
-              transition={{ type: "spring", stiffness: 300 }}
-            >
+            <a key={link.href} href={link.href} className={`whitespace-nowrap text-xs font-semibold xl:text-sm ${activeSection === link.id ? "text-gold-dark" : "text-navy hover:text-gold-dark"}`}>
               {link.label}
-
-              {activeSection === link.id && (
-                <motion.div
-                  layoutId="activeIndicator"
-                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-gold to-gold-light"
-                  transition={{
-                    type: "spring",
-                    stiffness: 300,
-                    damping: 30,
-                  }}
-                />
-              )}
-
-              <div
-                className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gold/30 transition-all duration-300 ${
-                  activeSection === link.id
-                    ? "opacity-0"
-                    : "opacity-0 group-hover:opacity-100"
-                }`}
-              />
-            </motion.a>
+            </a>
           ))}
-
           <button
-            onClick={() => openDialog("give")}
-            className="bg-gradient-gold text-secondary-foreground text-sm font-bold px-5 py-2.5 rounded-full hover:opacity-90 transition-opacity shadow-md hover:shadow-lg"
+            onClick={() => openDialog("give", { projectId: featured?.projectId, causeName: featured?.title || "the Mission" })}
+            className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white hover:bg-navy-light"
           >
-            Support the Mission
+            Support
           </button>
+          <Link to="/login" className="text-sm font-semibold text-navy hover:text-gold-dark">
+            Login
+          </Link>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          className="md:hidden text-navy pr-4"
-          onClick={() => setOpen(!open)}
-        >
-          {open ? <X size={28} /> : <Menu size={28} />}
+        <button className="text-navy lg:hidden" onClick={() => setOpen(!open)} aria-label="Toggle menu">
+          {open ? <X size={26} /> : <Menu size={26} />}
         </button>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {open && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{
-              type: "spring",
-              stiffness: 300,
-              damping: 30,
-            }}
-            className="md:hidden bg-cream/98 backdrop-blur-sm overflow-hidden border-t border-gold/10"
-          >
-            <div className="px-6 py-5 flex flex-col gap-2">
-              {links.map((link, index) => (
-                <motion.a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setOpen(false)}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.05 }}
-                  className={`py-3 px-4 rounded-lg text-base font-bold transition-colors relative group ${
-                    activeSection === link.id
-                      ? "text-gold bg-gold/10"
-                      : "text-navy hover:text-gold hover:bg-gold/5"
-                  }`}
-                >
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden border-t border-navy/10 bg-cream lg:hidden">
+            <div className="flex max-h-[80vh] flex-col gap-1 overflow-y-auto px-4 py-4">
+              {links.map((link) => (
+                <a key={link.href} href={link.href} onClick={() => setOpen(false)} className={`rounded-lg px-4 py-3 text-base font-semibold ${activeSection === link.id ? "bg-gold/10 text-gold-dark" : "text-navy"}`}>
                   {link.label}
-
-                  {activeSection === link.id && (
-                    <motion.div
-                      layoutId="activeMobileIndicator"
-                      className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-gold to-gold-light rounded-r"
-                      transition={{
-                        type: "spring",
-                        stiffness: 300,
-                        damping: 30,
-                      }}
-                    />
-                  )}
-                </motion.a>
+                </a>
               ))}
-
-              <motion.button
+              <button
                 onClick={() => {
                   setOpen(false);
-                  openDialog("give");
+                  openDialog("give", { projectId: featured?.projectId, causeName: featured?.title || "the Mission" });
                 }}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: links.length * 0.05 }}
-                className="bg-gradient-gold text-secondary-foreground font-bold px-5 py-3 rounded-full text-center mt-2 hover:opacity-90 transition-opacity"
+                className="mt-2 rounded-lg bg-navy px-5 py-3 font-semibold text-white"
               >
-                Support the Mission
-              </motion.button>
+                Support
+              </button>
+              <Link to="/login" onClick={() => setOpen(false)} className="rounded-lg px-4 py-3 text-base font-semibold text-navy">
+                Login
+              </Link>
             </div>
           </motion.div>
         )}

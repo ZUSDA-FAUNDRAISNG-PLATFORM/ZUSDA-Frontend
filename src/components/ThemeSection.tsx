@@ -1,90 +1,59 @@
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { ArrowRight } from "lucide-react";
+import { usePublished } from "@/cms/CmsProvider";
+import { useInvolvement } from "@/components/InvolvementDialogs";
 
 const ThemeSection = () => {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
+  const posters = usePublished("posters");
+  const { open } = useInvolvement();
+
+  if (!posters.length) return null;
+
+  const columns =
+    posters.length === 1
+      ? "mx-auto max-w-sm"
+      : posters.length === 2
+        ? "mx-auto max-w-3xl sm:grid-cols-2"
+        : "mx-auto max-w-5xl sm:grid-cols-2 lg:grid-cols-3";
 
   return (
-    <section id="theme" className="py-24 bg-cream">
-      <div className="container mx-auto px-4" ref={ref}>
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={inView ? { opacity: 1, y: 0 } : {}}
-          className="max-w-3xl mx-auto bg-navy relative overflow-hidden rounded-3xl shadow-elevated"
-        >
-          {/* Decorative corner accents */}
-          <div className="absolute top-0 left-0 w-24 h-24 border-t-2 border-l-2 border-gold/40 rounded-tl-3xl m-4 pointer-events-none" />
-          <div className="absolute top-0 right-0 w-24 h-24 border-t-2 border-r-2 border-gold/40 rounded-tr-3xl m-4 pointer-events-none" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 border-b-2 border-l-2 border-gold/40 rounded-bl-3xl m-4 pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-24 h-24 border-b-2 border-r-2 border-gold/40 rounded-br-3xl m-4 pointer-events-none" />
+    <section id="theme" className="scroll-mt-24 bg-white py-16 sm:scroll-mt-28 sm:py-24">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto mb-10 max-w-2xl text-center">
+          <p className="mb-3 text-sm font-medium text-gold-dark">Outreach</p>
+          <h2 className="mb-3 font-display text-3xl font-bold text-navy md:text-5xl">Support Mission</h2>
+          <p className="text-muted-foreground">Choose a cause and give. Each poster is shown at its natural size so nothing is stretched.</p>
+        </div>
 
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-96 h-96 bg-gold rounded-full blur-3xl" />
-            <div className="absolute bottom-0 left-0 w-80 h-80 bg-gold rounded-full blur-3xl" />
-          </div>
-
-          <div className="relative z-10 px-8 py-16 md:px-16 md:py-20 text-center">
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={inView ? { opacity: 1 } : {}}
-              transition={{ delay: 0.1 }}
-              className="text-gold uppercase tracking-[0.3em] text-xs md:text-sm font-semibold mb-6"
-            >
-              Mission Theme
-            </motion.p>
-
-            <motion.h2
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.2 }}
-              className="font-display text-3xl md:text-5xl font-bold text-primary-foreground mb-3 italic"
-            >
-              "Njooni Tusemezane"
-            </motion.h2>
-
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.3 }}
-              className="text-lg md:text-xl text-primary-foreground/70 mb-10"
-            >
-              Come Now, Let Us Reason Together
-            </motion.p>
-
-            <motion.div
-              initial={{ opacity: 0, scaleX: 0 }}
-              animate={inView ? { opacity: 1, scaleX: 1 } : {}}
-              transition={{ delay: 0.35, duration: 0.5 }}
-              className="w-16 h-px bg-gold mx-auto mb-10"
-            />
-
-            <motion.blockquote
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={inView ? { opacity: 1, scale: 1 } : {}}
-              transition={{ delay: 0.4 }}
-              className="mb-10"
-            >
-              <p className="font-display text-lg md:text-2xl text-primary-foreground leading-relaxed italic">
-                "Come now, and let us reason together," says the Lord, "Though your sins are like scarlet,
-                they shall be as white as snow; though they are red like crimson, they shall be as wool."
-              </p>
-              <cite className="block mt-4 text-gold font-semibold not-italic tracking-wide">
-                — Isaiah 1:18 (NKJV)
-              </cite>
-            </motion.blockquote>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ delay: 0.5 }}
-              className="inline-block px-8 py-5 bg-primary-foreground/5 border border-gold/20 rounded-xl"
-            >
-              <p className="text-xs text-primary-foreground/50 uppercase tracking-[0.2em] mb-1">Key Hymn</p>
-              <p className="font-display text-lg font-semibold text-primary-foreground">Hymn 170 (NZK)</p>
-            </motion.div>
-          </div>
-        </motion.div>
+        <div className={`grid items-start gap-6 ${columns}`}>
+          {posters.map((poster) => (
+            <article key={poster.id} className="overflow-hidden rounded-xl border border-navy/10 bg-cream">
+              <div className="flex max-h-[28rem] items-center justify-center bg-cream p-3">
+                <img
+                  src={poster.imageUrl}
+                  alt={poster.title}
+                  className="max-h-[26rem] w-auto max-w-full object-contain"
+                />
+              </div>
+              <div className="border-t border-navy/10 bg-white px-4 py-4">
+                <p className="mb-1 text-xs font-medium text-gold-dark">{poster.eyebrow || "Outreach"}</p>
+                <h3 className="mb-3 font-display text-xl font-semibold text-navy">{poster.title}</h3>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (poster.ctaHref?.startsWith("#")) {
+                      document.getElementById(poster.ctaHref.slice(1))?.scrollIntoView({ behavior: "smooth" });
+                    }
+                    open("give", { projectId: poster.projectId, causeName: poster.title });
+                  }}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-navy underline decoration-gold decoration-2 underline-offset-4 hover:text-gold-dark"
+                >
+                  {poster.ctaLabel || `Support ${poster.title}`}
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </article>
+          ))}
+        </div>
       </div>
     </section>
   );

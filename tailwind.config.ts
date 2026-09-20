@@ -87,12 +87,17 @@ export default {
           "0%, 100%": { boxShadow: "0 0 0 0 hsl(45 80% 55% / 0.4)" },
           "50%": { boxShadow: "0 0 0 12px hsl(45 80% 55% / 0)" },
         },
+        marquee: {
+          from: { transform: "translateX(0)" },
+          to: { transform: "translateX(-50%)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-up": "fade-up 0.6s ease-out forwards",
         "pulse-gold": "pulse-gold 2s infinite",
+        marquee: "marquee 55s linear infinite",
       },
     },
   },

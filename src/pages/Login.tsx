@@ -38,10 +38,8 @@ const Login = () => {
       <form onSubmit={submit} className="w-full max-w-md rounded-xl border border-navy/10 bg-white p-6 sm:p-8">
         <p className="mb-2 text-sm font-medium text-gold-dark">ZUSDA</p>
         <h1 className="mb-2 font-display text-3xl font-bold text-navy">Login</h1>
-        <p className="mb-6 text-sm text-muted-foreground">
-          Administrators manage website content. Members can sign in without editing access.
-        </p>
-        <div className="space-y-4">
+            
+          <div className="space-y-4">
           <div>
             <Label htmlFor="username">Username</Label>
             <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required className="mt-1.5" />
@@ -59,7 +57,7 @@ const Login = () => {
             Back to site
           </Link>
           <Link to="/register" className="font-medium text-navy hover:text-gold-dark">
-            Create member account
+            Create account
           </Link>
         </div>
       </form>

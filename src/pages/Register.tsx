@@ -34,8 +34,7 @@ const Register = () => {
     <div className="flex min-h-screen items-center justify-center bg-cream px-4 py-12">
       <form onSubmit={submit} className="w-full max-w-md rounded-xl border border-navy/10 bg-white p-6 sm:p-8">
         <h1 className="mb-2 font-display text-3xl font-bold text-navy">Create account</h1>
-        <p className="mb-6 text-sm text-muted-foreground">Member accounts can sign in, but cannot edit website content.</p>
-        <div className="space-y-4">
+                <div className="space-y-4">
           <div>
             <Label htmlFor="name">Full name</Label>
             <Input id="name" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="mt-1.5" />

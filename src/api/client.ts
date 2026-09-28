@@ -11,7 +11,14 @@ export class ApiError extends Error {
 }
 
 const TOKEN_STORAGE_KEY = "zusda_auth_token";
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api").replace(/\/$/, "");
+const DEFAULT_API_BASE_URL = "https://zusda-backend.onrender.com/api";
+
+export function resolveApiBaseUrl(value?: string | null) {
+  const configured = (value ?? import.meta.env.VITE_API_BASE_URL ?? DEFAULT_API_BASE_URL).trim();
+  return (configured || DEFAULT_API_BASE_URL).replace(/\/$/, "");
+}
+
+const API_BASE_URL = resolveApiBaseUrl();
 
 export function getApiBaseUrl() {
   return API_BASE_URL;

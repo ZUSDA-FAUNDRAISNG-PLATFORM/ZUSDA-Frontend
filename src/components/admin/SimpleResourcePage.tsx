@@ -107,7 +107,7 @@ export function SimpleResourcePage<K extends CmsCollection>({
               <p className="text-xs text-navy/50">{item.published ? "Published" : "Unpublished"}</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button size="sm" variant="outline" onClick={() => setEditing(item)}>Edit</Button>
+              <Button size="sm" variant="outline" onClick={() => setEditing(item as unknown as Record<string, unknown>)}>Edit</Button>
               <Button size="sm" variant="outline" onClick={() => move(item.id, -1)}>Up</Button>
               <Button size="sm" variant="outline" onClick={() => move(item.id, 1)}>Down</Button>
               <Button size="sm" variant="outline" onClick={() => upsertItem(collection, { ...item, published: !item.published })}>

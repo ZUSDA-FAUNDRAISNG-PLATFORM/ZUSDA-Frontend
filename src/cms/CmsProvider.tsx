@@ -100,7 +100,10 @@ export function CmsProvider({ children }: { children: ReactNode }) {
 
       let content: Partial<CmsState> | null = null;
       try {
-        let remote = await cmsApi.fetchCms();
+        let remote = await Promise.race([
+          cmsApi.fetchCms(),
+          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
+        ]);
         if (!remote.site && hasServerToken()) {
           try {
             const { users: _ignored, ...seedContent } = seed;
@@ -113,6 +116,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       } catch {
         content = cached;
         toast.error("Could not reach the server. Showing saved content.");
+        setTimeout(() => void refresh(), 15000);
       }
 
       const base = content ?? {};

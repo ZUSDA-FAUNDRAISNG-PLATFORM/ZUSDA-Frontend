@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
-import { apiPost, getStoredToken, setStoredToken } from "@/api/client";
+import { ApiError, apiGet, apiPost, getStoredToken, setStoredToken } from "@/api/client";
 import { LOCAL_ADMIN_TOKEN, notifyAdminSessionChanged } from "@/lib/testAdmin";
 import type { CmsUser, UserRole } from "./types";
 import { useCms } from "./CmsProvider";
@@ -35,6 +35,11 @@ function toAuthUser(user: CmsUser): AuthUser {
   };
 }
 
+function normalizeRole(role?: string): UserRole {
+  if (!role) return "admin";
+  return ["admin", "super_admin", "editor"].includes(role) ? "admin" : "member";
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { state, addUser } = useCms();
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -45,6 +50,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!token) {
       setLoading(false);
       return;
+    }
+    if (!token.startsWith(LOCAL_ADMIN_TOKEN)) {
+      let cancelled = false;
+      apiGet<AuthUser>("/auth/me")
+        .then((me) => {
+          if (!cancelled) setUser({ ...me, role: normalizeRole(me.role) });
+        })
+        .catch((err) => {
+          if (cancelled) return;
+          if (err instanceof ApiError && (err.status === 401 || err.status === 422)) setStoredToken(null);
+          setUser(null);
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+      return () => {
+        cancelled = true;
+      };
     }
     const localId = Number(token.replace(`${LOCAL_ADMIN_TOKEN}:`, ""));
     const match = state.users.find((item) => item.id === localId) ?? (token === LOCAL_ADMIN_TOKEN ? state.users.find((item) => item.role === "admin") : null);
@@ -61,9 +84,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setStoredToken(payload.access_token);
       const next = payload.user || payload.admin;
       if (next) {
-        setUser({ ...next, role: next.role || "admin" });
+        const normalized = { ...next, role: normalizeRole(next.role) };
+        setUser(normalized);
         notifyAdminSessionChanged();
-        return { ...next, role: next.role || "admin" };
+        return normalized;
       }
     } catch {
       // local CMS auth

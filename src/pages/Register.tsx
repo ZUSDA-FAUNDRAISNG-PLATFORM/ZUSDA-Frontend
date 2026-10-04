@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { useAuth } from "@/cms/AuthProvider";
+import { isAdminRole, useAuth } from "@/cms/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,7 +13,7 @@ const Register = () => {
   const [loading, setLoading] = useState(false);
 
   if (user) {
-    return <Navigate to={user.role === "admin" ? "/dashboard" : "/account"} replace />;
+    return <Navigate to={isAdminRole(user.role) ? "/dashboard" : "/account"} replace />;
   }
 
   const submit = async (event: FormEvent) => {

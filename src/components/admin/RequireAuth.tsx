@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/cms/AuthProvider";
+import { isAdminRole, useAuth } from "@/cms/AuthProvider";
 import type { UserRole } from "@/cms/types";
 
 export function RequireAuth({
@@ -24,8 +24,10 @@ export function RequireAuth({
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
-  if (role && user.role !== role) {
-    return <Navigate to={user.role === "admin" ? "/dashboard" : "/account"} replace />;
+  const hasAccess = role === "admin" ? isAdminRole(user.role) : user.role === role;
+
+  if (role && !hasAccess) {
+    return <Navigate to={isAdminRole(user.role) ? "/dashboard" : "/account"} replace />;
   }
 
   return <>{children}</>;

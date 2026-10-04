@@ -1,4 +1,9 @@
-export type UserRole = "admin" | "member";
+
+export type UserRole =
+  | "super_admin"
+  | "admin"
+  | "editor"
+  | "member";
 
 export interface CmsUser {
   id: number;

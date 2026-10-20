@@ -18,8 +18,6 @@ const ThemeSection = () => {
 
   return (
     <section id="theme" className="relative scroll-mt-24 overflow-hidden bg-white py-16 sm:scroll-mt-28 sm:py-24">
-      <div className="pointer-events-none absolute -right-20 top-0 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
-      <div className="pointer-events-none absolute -left-20 bottom-0 h-80 w-80 rounded-full bg-navy/15 blur-3xl" />
 
       <div className="container relative mx-auto px-4">
         <div className="mx-auto mb-10 max-w-2xl text-center">
@@ -37,7 +35,7 @@ const ThemeSection = () => {
         <div className={`grid items-start gap-6 ${columns}`}>
           {posters.map((poster, i) => (
             <Reveal key={poster.id} direction="zoom" delay={i * 140}>
-              <article className="glass-light hover-lift hover-glow group overflow-hidden rounded-2xl">
+              <article className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow group overflow-hidden rounded-2xl">
                 <div className="flex max-h-[28rem] items-center justify-center overflow-hidden p-3">
                   <img
                     src={poster.imageUrl}

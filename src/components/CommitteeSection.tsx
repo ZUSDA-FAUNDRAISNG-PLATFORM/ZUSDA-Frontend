@@ -20,9 +20,6 @@ const CommitteeSection = () => {
 
   return (
     <section id="committee" className="relative overflow-hidden bg-background py-16 sm:py-24">
-      <div className="pointer-events-none absolute -left-24 top-20 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-1/2 h-96 w-96 rounded-full bg-navy/15 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-10 left-1/3 h-64 w-64 rounded-full bg-gold/20 blur-3xl" />
 
       <div className="container relative mx-auto px-4">
         <div className="mb-12 text-center sm:mb-16">
@@ -39,7 +36,7 @@ const CommitteeSection = () => {
 
         {chair ? (
           <Reveal direction="zoom" className="mx-auto mb-10 max-w-5xl">
-            <div className="glass-dark hover-glow rounded-3xl bg-navy/80 p-6 text-primary-foreground sm:p-8">
+            <div className="rounded-xl border border-gold/20 bg-navy p-6 text-primary-foreground sm:p-8">
               <div className="flex flex-col items-center gap-6 sm:flex-row">
                 <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-2 ring-gold/50 ring-offset-2 ring-offset-navy sm:h-32 sm:w-32">
                   {chair.photoUrl ? <img src={chair.photoUrl} alt={chair.name} className="h-full w-full object-cover" /> : null}
@@ -59,7 +56,7 @@ const CommitteeSection = () => {
             const leaders = members.filter((item) => !item.isChair && item.department === department);
             return (
               <Reveal key={department} direction="up" delay={(i % 3) * 130} className="h-full">
-                <div className="glass-light hover-lift hover-glow flex h-full flex-col rounded-2xl p-6">
+                <div className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow flex h-full flex-col rounded-2xl p-6">
                   <h4 className="font-display text-lg font-bold text-navy">{department}</h4>
                   <p className="mb-5 text-sm text-muted-foreground">{leaders[0]?.bio}</p>
                   <div className="mt-auto flex flex-wrap justify-around gap-3 pt-2">

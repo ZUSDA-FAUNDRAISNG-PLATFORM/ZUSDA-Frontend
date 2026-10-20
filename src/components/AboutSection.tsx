@@ -17,9 +17,6 @@ const AboutSection = () => {
   return (
     <section id="about" className="relative overflow-hidden bg-cream py-16 sm:py-24">
       {/* soft blobs so the glass has something to blur */}
-      <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-gold/25 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-1/2 h-80 w-80 rounded-full bg-navy/15 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-24 left-1/3 h-64 w-64 rounded-full bg-gold/20 blur-3xl" />
 
       <div className="container relative mx-auto px-4">
         <div className="mx-auto mb-14 max-w-3xl text-center">
@@ -40,7 +37,7 @@ const AboutSection = () => {
             { title: state.site.visionTitle, body: state.site.visionBody },
           ].map((item, i) => (
             <Reveal key={item.title} direction={i === 0 ? "left" : "right"} delay={i * 120} className="h-full">
-              <article className="glass-light hover-lift hover-glow h-full rounded-2xl p-6 sm:p-8">
+              <article className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow h-full rounded-2xl p-6 sm:p-8">
                 <h3 className="mb-3 font-display text-2xl font-semibold text-navy">{item.title}</h3>
                 <p className="leading-relaxed text-muted-foreground">{item.body}</p>
               </article>
@@ -59,7 +56,7 @@ const AboutSection = () => {
             const Icon = icons[item.icon] || Heart;
             return (
               <Reveal key={item.id} direction="up" delay={i * 130} className="h-full">
-                <div className="glass-light hover-lift hover-glow group h-full rounded-2xl p-6 text-center sm:p-8">
+                <div className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow group h-full rounded-2xl p-6 text-center sm:p-8">
                   <div className="mx-auto mb-5 flex h-12 w-12 items-center justify-center rounded-lg bg-gold/15 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6">
                     <Icon className="text-gold-dark" size={22} />
                   </div>

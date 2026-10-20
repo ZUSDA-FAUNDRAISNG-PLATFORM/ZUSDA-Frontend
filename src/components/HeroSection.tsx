@@ -18,7 +18,7 @@ const HeroSection = () => {
       <div className="absolute inset-0 bg-gradient-to-b from-cream/10 via-transparent to-cream" />
 
       <div className="relative z-10 container mx-auto px-4 py-28 sm:py-32">
-        <div className="glass-light mx-auto max-w-4xl rounded-3xl p-6 text-center sm:p-10 md:p-14">
+        <div className="mx-auto max-w-4xl p-6 text-center sm:p-10 md:p-14">
           <Reveal direction="down" delay={0}>
             <p className="mb-4 text-sm font-medium tracking-wide text-gold-dark">{site.heroEyebrow}</p>
           </Reveal>
@@ -53,7 +53,7 @@ const HeroSection = () => {
               </button>
               <a
                 href="#involved"
-                className="hover-lift glass-light w-full rounded-lg px-8 py-3 text-center text-base font-semibold text-navy hover:bg-white/80 sm:w-auto"
+                className="hover-lift w-full rounded-lg border border-navy/20 bg-white/70 px-8 py-3 text-center text-base font-semibold text-navy hover:bg-white/80 sm:w-auto"
               >
                 Get Involved
               </a>

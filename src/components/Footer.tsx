@@ -14,13 +14,11 @@ const Footer = () => {
 
   return (
     <footer className="relative overflow-hidden border-t border-gold/10 bg-navy py-14">
-      <div className="pointer-events-none absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-gold/15 blur-3xl" />
-      <div className="pointer-events-none absolute -right-24 top-0 h-72 w-72 rounded-full bg-sky-400/10 blur-3xl" />
 
       <div className="container relative mx-auto px-4">
         <div className="mx-auto mb-10 grid max-w-5xl gap-6 md:grid-cols-2">
           <Reveal direction="left" className="h-full">
-            <div className="glass-dark h-full rounded-2xl p-6">
+            <div className="h-full p-6">
               <div className="mb-4 flex items-center gap-4">
                 <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-gold bg-white">
                   <img src={sdaLogo} alt="SDA logo" loading="lazy" className="h-full w-full object-cover" />
@@ -36,7 +34,7 @@ const Footer = () => {
             </div>
           </Reveal>
           <Reveal direction="right" delay={120} className="h-full">
-            <div className="glass-dark h-full rounded-2xl p-6">
+            <div className="h-full p-6">
               <p className="mb-4 text-xs font-medium tracking-wide text-gold">Contact</p>
               <ul className="space-y-4">
                 {contacts.map((item) => (

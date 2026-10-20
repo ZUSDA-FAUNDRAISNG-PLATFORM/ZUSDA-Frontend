@@ -226,3 +226,19 @@ html { scroll-behavior: smooth; scroll-padding-top: 6rem; }
   .skeleton::after { animation: none; }
   .reveal[data-dir] { transform: none; }
 }
+
+/* ===== Visibility: bolder text, readable hero ===== */
+body { font-weight: 500; }
+.text-muted-foreground { color: #1e293b; }
+h1, h2, h3 { font-weight: 700; }
+
+#home .bg-cream\/15 { background: rgba(15, 23, 42, .45); }
+#home .bg-gradient-to-b {
+  background-image: linear-gradient(to bottom, rgba(15,23,42,.35), rgba(15,23,42,.1) 50%, rgba(15,23,42,.55));
+}
+#home h1, #home h2, #home p {
+  color: #fff;
+  font-weight: 700;
+  text-shadow: 0 2px 14px rgba(0,0,0,.65);
+}
+#home p.text-gold-dark { color: #f5d06f; }

@@ -63,7 +63,6 @@ const CommitteeSection = () => {
                     {leaders.map((leader) => (
                       <div key={leader.id} className="group flex w-28 flex-col items-center gap-2">
                         <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-navy/10 ring-2 ring-gold/60 transition-all duration-300 group-hover:scale-110 group-hover:ring-gold sm:h-24 sm:w-24">
-                          <span className="absolute font-display text-sm font-bold text-navy">{initials(leader.name)}</span>
                           {leader.photoUrl ? (
                             <img loading="lazy" decoding="async" src={leader.photoUrl} alt="" onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-cover" />
                           ) : (

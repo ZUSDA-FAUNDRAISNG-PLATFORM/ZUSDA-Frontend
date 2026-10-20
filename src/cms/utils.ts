@@ -39,13 +39,34 @@ export function readJson<T>(key: string): T | null {
     try {
       const raw = read();
       if (!raw) continue;
-      return JSON.parse(raw) as T;
+      const parsed = JSON.parse(raw) as T;
+      return stripStaleAssetUrls(parsed) as T;
     } catch {
       // ignore corrupt or unavailable cache entries and continue to the next fallback.
     }
   }
 
   return null;
+}
+
+function stripStaleAssetUrls(input: unknown): unknown {
+  if (typeof input === "string") {
+    return input.startsWith("/assets/") ? "" : input;
+  }
+
+  if (Array.isArray(input)) {
+    return input.map((item) => stripStaleAssetUrls(item));
+  }
+
+  if (input && typeof input === "object") {
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+      cleaned[key] = stripStaleAssetUrls(value);
+    }
+    return cleaned;
+  }
+
+  return input;
 }
 
 export function sanitizeCmsAssetRefs<T>(value: T, fallback: T): T {
@@ -94,7 +115,7 @@ function stripDataUrls(input: unknown): unknown {
 
 export function writeJson(key: string, value: unknown) {
   const payload = JSON.stringify(value);
-  const compact = JSON.stringify(stripDataUrls(value));
+  const compact = JSON.stringify(stripDataUrls(stripStaleAssetUrls(value)));
 
   const tryWrite = (store: Storage, storageKey: string, nextPayload: string) => {
     store.setItem(storageKey, nextPayload);

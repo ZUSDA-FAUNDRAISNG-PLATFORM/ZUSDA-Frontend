@@ -40,6 +40,8 @@ export function setStoredToken(token: string | null) {
 export function resolveAssetUrl(value?: string | null) {
   if (!value) return undefined;
   if (/^https?:\/\//i.test(value) || value.startsWith("data:")) return value;
+  // Vite-bundled files and public/ files live on this site, not on the API server
+  if (/^\/(assets|src|icon-|manifest|sw\.js)/.test(value)) return value;
   if (value.startsWith("/")) return `${API_BASE_URL.replace(/\/api$/, "")}${value}`;
   return value;
 }

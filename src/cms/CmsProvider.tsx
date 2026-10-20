@@ -96,6 +96,28 @@ function describe(err: unknown) {
   return err instanceof Error ? err.message : "Could not save to the server.";
 }
 
+const repairRemote = (remote: any, seed: any) => {
+  const out = { ...remote };
+  const stem = (u: string) => u.replace(/^.*\//, "").replace(/-[A-Za-z0-9_-]{6,10}(\.[a-z]+)$/i, "$1");
+  const seedUrls: Record<string, string> = {};
+  const collect = (v: any) => {
+    if (Array.isArray(v)) v.forEach(collect);
+    else if (v && typeof v === "object") Object.values(v).forEach(collect);
+    else if (typeof v === "string" && v.startsWith("/assets/")) seedUrls[stem(v)] = v;
+  };
+  collect(seed);
+  const fix = (v: any): any => {
+    if (Array.isArray(v)) return v.map(fix);
+    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fix(x)]));
+    if (typeof v === "string" && v.startsWith("/assets/")) return seedUrls[stem(v)] ?? v;
+    return v;
+  };
+  return fix(out);
+};
+
+let seedPromise: Promise<any> | null = null;
+const getSeed = () => (seedPromise ??= createSeedState());
+
 export function CmsProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CmsState>(FALLBACK_CMS_STATE);
 
@@ -104,7 +126,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
 
   const refresh = async () => {
     try {
-      const remote = await cmsApi.fetchCms();
+      const remote = repairRemote(await cmsApi.fetchCms(), await getSeed());
       if (remote.site) {
         apply((current) => ({ ...current, ...remote, site: remote.site as SiteSettings, users: current.users }) as CmsState);
       }
@@ -172,7 +194,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
             remote = await cmsApi.fetchCms();
           }
         }
-        if (remote.site) content = remote;
+        if (remote.site) content = repairRemote(remote, seed);
       } catch {
         content = safeCached;
         toast.error("Could not reach the server. Showing saved content.");

@@ -60,7 +60,7 @@ function toAuthUser(user: CmsUser): AuthUser {
  * Normalize backend roles without destroying
  * the distinction between administrator levels.
  */
-function normalizeRole(role?: string): UserRole {
+export function normalizeRole(role?: string): UserRole {
   if (!role) return "member";
 
   if (

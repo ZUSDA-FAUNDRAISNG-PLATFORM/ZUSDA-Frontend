@@ -184,7 +184,10 @@ const BudgetSection = () => {
   const causeName = featured?.title || activeCollection?.name || "the Mission";
 
   return (
-    <section id="budget" className="relative scroll-mt-28 bg-navy py-16 sm:py-20">
+    <section id="budget" className="relative scroll-mt-28 overflow-hidden bg-navy py-16 sm:py-20">
+      <div className="pointer-events-none absolute -left-24 top-10 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
+      <div className="pointer-events-none absolute -right-24 top-1/3 h-96 w-96 rounded-full bg-sky-400/15 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-gold/20 blur-3xl" />
       <div className="container relative z-10 mx-auto px-4" ref={ref}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -228,7 +231,7 @@ const BudgetSection = () => {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={inView ? { opacity: 1, scale: 1 } : {}}
               transition={{ delay: 0.1 }}
-              className="rounded-xl border border-white/10 bg-white/5 p-6"
+              className="glass-dark hover-glow rounded-2xl p-6"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -288,7 +291,7 @@ const BudgetSection = () => {
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: 0.15 }}
-                className="rounded-xl border border-white/10 bg-white/5 p-6 text-left"
+                className="glass-dark hover-glow rounded-2xl p-6 text-left"
               >
                 <p className="mb-4 text-xs font-medium text-gold">Payment Details</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -318,7 +321,7 @@ const BudgetSection = () => {
                 <button
                   type="button"
                   onClick={() => open("give", { projectId: selectedProjectId, causeName })}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gold px-4 py-3 font-semibold text-navy transition-colors hover:bg-gold-light"
+                  className="hover-lift mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gold px-4 py-3 font-semibold text-navy hover:bg-gold-light"
                 >
                   Give Now
                   <ArrowRight size={16} />
@@ -329,7 +332,7 @@ const BudgetSection = () => {
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: 0.2 }}
-                className="rounded-xl border border-white/10 bg-white/5 p-6"
+                className="glass-dark hover-glow rounded-2xl p-6"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-gold">Next Milestone</p>
@@ -355,7 +358,7 @@ const BudgetSection = () => {
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-left">
+            <div className="glass-dark hover-glow rounded-2xl p-4 text-left">
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-xs font-medium text-gold">Recent Contributions</p>
                 <span className="rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-gold">Live</span>
@@ -391,7 +394,7 @@ const BudgetSection = () => {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                className="rounded-xl border border-white/10 bg-white/5 p-6"
+                className="glass-dark hover-glow rounded-2xl p-6"
               >
                 <div className="flex items-center gap-2 text-gold">
                   <HeartHandshake size={16} />
@@ -403,7 +406,7 @@ const BudgetSection = () => {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                className="rounded-xl border border-white/10 bg-navy/60 p-6"
+                className="glass-dark hover-glow rounded-2xl p-6"
               >
                 <div className="flex items-center justify-between">
                   <div>

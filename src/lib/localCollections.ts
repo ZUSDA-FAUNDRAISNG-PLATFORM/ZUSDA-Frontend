@@ -24,22 +24,38 @@ const MISSION_SEED: EventCollectionDTO = {
 };
 
 export function loadLocalCollections(): EventCollectionDTO[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw) as EventCollectionDTO[];
-      if (parsed?.length) return parsed;
+  const reads = [
+    () => localStorage.getItem(STORAGE_KEY),
+    () => sessionStorage.getItem(`${STORAGE_KEY}:session`),
+  ];
+
+  for (const read of reads) {
+    try {
+      const raw = read();
+      if (raw) {
+        const parsed = JSON.parse(raw) as EventCollectionDTO[];
+        if (parsed?.length) return parsed;
+      }
+    } catch {
+      // ignore corrupt local data and continue to the next fallback.
     }
-  } catch {
-    // ignore corrupt local data
   }
+
   const seeded = [MISSION_SEED];
   saveLocalCollections(seeded);
   return seeded;
 }
 
 export function saveLocalCollections(collections: EventCollectionDTO[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
+  } catch {
+    try {
+      sessionStorage.setItem(`${STORAGE_KEY}:session`, JSON.stringify(collections));
+    } catch {
+      // keep the app usable even when storage is full.
+    }
+  }
 }
 
 export function createLocalCollection(name: string, current: EventCollectionDTO[]): EventCollectionDTO {

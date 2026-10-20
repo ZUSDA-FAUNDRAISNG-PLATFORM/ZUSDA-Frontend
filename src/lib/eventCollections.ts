@@ -59,29 +59,48 @@ function migrateLegacyStore(): EventCollection[] | null {
 }
 
 export function loadCollections(): EventCollection[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) {
+  const reads = [
+    () => localStorage.getItem(STORAGE_KEY),
+    () => sessionStorage.getItem(`${STORAGE_KEY}:session`),
+  ];
+
+  for (const read of reads) {
+    try {
+      const raw = read();
+      if (!raw) continue;
       const parsed = JSON.parse(raw) as EventCollection[];
       if (parsed?.length) {
-        // safety net: ensure exactly one primary exists
         if (!parsed.some((c) => c.isPrimary)) parsed[0].isPrimary = true;
         return parsed;
       }
+    } catch {
+      // ignore corrupt cache entries and continue to the next fallback.
     }
+  }
+
+  try {
     const migrated = migrateLegacyStore();
     if (migrated) {
       saveCollections(migrated);
       return migrated;
     }
-    return [MISSION_2026];
   } catch {
-    return [MISSION_2026];
+    // ignore legacy migration issues.
   }
+
+  return [MISSION_2026];
 }
 
 export function saveCollections(collections: EventCollection[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(collections));
+  } catch {
+    try {
+      sessionStorage.setItem(`${STORAGE_KEY}:session`, JSON.stringify(collections));
+    } catch {
+      // keep the app usable even when storage is full.
+    }
+  }
 }
 
 export function getPrimaryId(collections: EventCollection[]): string {

@@ -30,27 +30,84 @@ export function fileToDataUrl(file: File) {
 }
 
 export function readJson<T>(key: string): T | null {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? (JSON.parse(raw) as T) : null;
-  } catch {
-    return null;
+  const readers = [
+    () => localStorage.getItem(key),
+    () => sessionStorage.getItem(`${key}:session`),
+  ];
+
+  for (const read of readers) {
+    try {
+      const raw = read();
+      if (!raw) continue;
+      return JSON.parse(raw) as T;
+    } catch {
+      // ignore corrupt or unavailable cache entries and continue to the next fallback.
+    }
   }
+
+  return null;
+}
+
+function stripDataUrls(input: unknown): unknown {
+  if (typeof input === "string") {
+    return input.startsWith("data:") ? "" : input;
+  }
+
+  if (Array.isArray(input)) {
+    return input.map((item) => stripDataUrls(item));
+  }
+
+  if (input && typeof input === "object") {
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
+      cleaned[key] = stripDataUrls(value);
+    }
+    return cleaned;
+  }
+
+  return input;
 }
 
 export function writeJson(key: string, value: unknown) {
+  const payload = JSON.stringify(value);
+  const compact = JSON.stringify(stripDataUrls(value));
+
+  const tryWrite = (store: Storage, storageKey: string, nextPayload: string) => {
+    store.setItem(storageKey, nextPayload);
+    return true;
+  };
+
   try {
-    localStorage.setItem(key, JSON.stringify(value));
+    tryWrite(localStorage, key, payload);
+    return;
   } catch {
-    try {
-      // quota exceeded: cache again without embedded images
-      localStorage.setItem(
-        key,
-        JSON.stringify(value, (_k, v) => (typeof v === "string" && v.startsWith("data:") ? "" : v)),
-      );
-    } catch {
-      localStorage.removeItem(key);
+    // fall through to session fallback below
+  }
+
+  try {
+    tryWrite(sessionStorage, `${key}:session`, compact.length < payload.length ? compact : payload);
+    return;
+  } catch {
+    // final fallback: strip data URLs and retry once before giving up.
+  }
+
+  try {
+    if (compact.length < payload.length) {
+      try {
+        localStorage.setItem(key, compact);
+        return;
+      } catch {
+        try {
+          sessionStorage.setItem(`${key}:session`, compact);
+          return;
+        } catch {
+          localStorage.removeItem(key);
+          sessionStorage.removeItem(`${key}:session`);
+        }
+      }
     }
+  } catch {
+    // ignore cleanup failures and keep the app running.
   }
 }
 

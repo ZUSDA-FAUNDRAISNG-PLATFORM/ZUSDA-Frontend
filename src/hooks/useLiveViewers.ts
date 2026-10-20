@@ -14,12 +14,21 @@ function sessionId() {
 }
 
 function readPresence(): PresenceEntry[] {
-  try {
-    const raw = localStorage.getItem(PRESENCE_KEY);
-    return raw ? (JSON.parse(raw) as PresenceEntry[]) : [];
-  } catch {
-    return [];
+  const reads = [
+    () => localStorage.getItem(PRESENCE_KEY),
+    () => sessionStorage.getItem(`${PRESENCE_KEY}:session`),
+  ];
+
+  for (const read of reads) {
+    try {
+      const raw = read();
+      if (raw) return JSON.parse(raw) as PresenceEntry[];
+    } catch {
+      // ignore corrupt presence cache entries and continue to the next fallback.
+    }
   }
+
+  return [];
 }
 
 function activeViewers(now = Date.now()) {
@@ -33,15 +42,27 @@ export function useLiveViewers() {
     const id = sessionId();
 
     const publish = () => {
+      const writePresence = (value: PresenceEntry[]) => {
+        try {
+          localStorage.setItem(PRESENCE_KEY, JSON.stringify(value));
+        } catch {
+          try {
+            sessionStorage.setItem(`${PRESENCE_KEY}:session`, JSON.stringify(value));
+          } catch {
+            // ignore quota errors from the presence heartbeat so the page keeps working.
+          }
+        }
+      };
+
       if (document.hidden) {
         const remaining = activeViewers().filter((item) => item.id !== id);
-        localStorage.setItem(PRESENCE_KEY, JSON.stringify(remaining));
+        writePresence(remaining);
         setCount(Math.max(remaining.length, 0));
         return;
       }
       const now = Date.now();
       const next = [...activeViewers(now).filter((item) => item.id !== id), { id, updatedAt: now }];
-      localStorage.setItem(PRESENCE_KEY, JSON.stringify(next));
+      writePresence(next);
       setCount(next.length);
     };
 
@@ -56,14 +77,30 @@ export function useLiveViewers() {
     document.addEventListener("visibilitychange", publish);
     window.addEventListener("storage", onStorage);
     window.addEventListener("beforeunload", () => {
-      localStorage.setItem(PRESENCE_KEY, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
+      try {
+        localStorage.setItem(PRESENCE_KEY, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
+      } catch {
+        try {
+          sessionStorage.setItem(`${PRESENCE_KEY}:session`, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
+        } catch {
+          // ignore cleanup quota errors.
+        }
+      }
     });
 
     return () => {
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", publish);
       window.removeEventListener("storage", onStorage);
-      localStorage.setItem(PRESENCE_KEY, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
+      try {
+        localStorage.setItem(PRESENCE_KEY, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
+      } catch {
+        try {
+          sessionStorage.setItem(`${PRESENCE_KEY}:session`, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
+        } catch {
+          // ignore cleanup quota errors.
+        }
+      }
     };
   }, []);
 

@@ -304,7 +304,7 @@ const BudgetSection = () => {
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <p className="text-[11px] uppercase tracking-wider text-primary-foreground/50">Paybill</p>
-                      {copiedKey === "Paybill" ? <Check className="text-green-400" size={14} /> : {copiedKey === "Account number" ? <Check className="text-green-400" size={14} /> : <Copy className="text-gold/60 group-hover:text-gold" size={14} />}}
+                      {copiedKey === "Paybill" ? <Check className="text-green-400" size={14} /> : <Copy className="text-gold/60 group-hover:text-gold" size={14} />}
                     </div>
                     <p className="break-all font-display text-2xl font-bold text-primary-foreground">{paybill}</p>
                   </button>
@@ -315,7 +315,7 @@ const BudgetSection = () => {
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <p className="text-[11px] uppercase tracking-wider text-primary-foreground/50">Account No.</p>
-                      <Copy className="text-gold/60 group-hover:text-gold" size={14} />
+                      {copiedKey === "Account number" ? <Check className="text-green-400" size={14} /> : <Copy className="text-gold/60 group-hover:text-gold" size={14} />}
                     </div>
                     <p className="break-all font-display text-2xl font-bold text-primary-foreground">{account}</p>
                   </button>

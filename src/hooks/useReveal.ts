@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-export function useReveal<T extends HTMLElement = HTMLDivElement>(threshold = 0.15) {
+export function useReveal<T extends HTMLElement = HTMLDivElement>(threshold = 0.05) {
   const ref = useRef<T>(null);
   const [visible, setVisible] = useState(false);
 
@@ -8,13 +8,8 @@ export function useReveal<T extends HTMLElement = HTMLDivElement>(threshold = 0.
     const el = ref.current;
     if (!el) return;
     const obs = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          obs.disconnect();
-        }
-      },
-      { threshold, rootMargin: "0px 0px -60px 0px" }
+      ([entry]) => setVisible(entry.isIntersecting),
+      { threshold, rootMargin: "0px 0px -8% 0px" }
     );
     obs.observe(el);
     return () => obs.disconnect();

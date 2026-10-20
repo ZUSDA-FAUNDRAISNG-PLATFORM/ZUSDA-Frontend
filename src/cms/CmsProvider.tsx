@@ -185,6 +185,18 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         mergedSite.countdownDate = seed.site.countdownDate;
       }
       const next = { ...seed, ...base, site: mergedSite, users } as CmsState;
+      const fixPhotos = (remoteList: any[], seedList: any[]) =>
+        remoteList.map((item) => {
+          if (!item || typeof item.photoUrl !== "string" || !item.photoUrl.startsWith("/assets/")) return item;
+          const match = seedList.find((x) => x && x.name === item.name && typeof x.photoUrl === "string");
+          return match ? { ...item, photoUrl: match.photoUrl } : item;
+        });
+      for (const k of Object.keys(seed)) {
+        if (k === "users") continue;
+        const sv = (seed as any)[k];
+        const nv = (next as any)[k];
+        if (Array.isArray(sv) && Array.isArray(nv)) (next as any)[k] = fixPhotos(nv, sv);
+      }
       if (!cancelled) setState(next);
     };
     void boot();

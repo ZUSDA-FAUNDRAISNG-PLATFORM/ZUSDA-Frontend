@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { fileToDataUrl } from "@/cms/utils";
+import { compressImageToDataUrl as fileToDataUrl } from "@/cms/utils";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 

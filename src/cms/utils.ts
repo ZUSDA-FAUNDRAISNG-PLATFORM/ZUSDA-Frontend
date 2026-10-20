@@ -39,7 +39,19 @@ export function readJson<T>(key: string): T | null {
 }
 
 export function writeJson(key: string, value: unknown) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    try {
+      // quota exceeded: cache again without embedded images
+      localStorage.setItem(
+        key,
+        JSON.stringify(value, (_k, v) => (typeof v === "string" && v.startsWith("data:") ? "" : v)),
+      );
+    } catch {
+      localStorage.removeItem(key);
+    }
+  }
 }
 
 function mergeByTitle<T extends { id: number; title: string }>(existing: T[] | undefined, seed: T[]): T[] {
@@ -66,4 +78,34 @@ export function mergeCmsState(existing: Partial<CmsState> | null, seed: CmsState
     ministries: mergeByTitle(existing.ministries, seed.ministries),
     users: existing.users?.length ? existing.users : seed.users,
   };
+}
+
+export function compressImageToDataUrl(file: File, maxSize = 1200, quality = 0.8): Promise<string> {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = () => {
+      const original = String(reader.result);
+      if (!file.type.startsWith("image/") || file.type === "image/svg+xml" || file.type === "image/gif") {
+        resolve(original);
+        return;
+      }
+      const img = new Image();
+      img.onerror = () => resolve(original);
+      img.onload = () => {
+        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return resolve(original);
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = original;
+    };
+    reader.readAsDataURL(file);
+  });
 }

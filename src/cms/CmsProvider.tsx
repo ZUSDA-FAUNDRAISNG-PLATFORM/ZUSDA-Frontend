@@ -12,6 +12,48 @@ const USERS_KEY = "zusda-cms-users-v1";
 const LEGACY_COLLECTIONS_KEY = "zusda-local-collections-v1";
 const CMS_EVENT = "zusda:cms-changed";
 
+const FALLBACK_CMS_STATE: CmsState = {
+  site: {
+    churchName: "ZUSDA",
+    tagline: "",
+    heroEyebrow: "",
+    heroTitle: "",
+    heroSubtitle: "",
+    heroMeta: "",
+    heroImageUrl: "",
+    countdownDate: "",
+    aboutEyebrow: "",
+    aboutTitle: "",
+    aboutBody: "",
+    missionTitle: "",
+    missionBody: "",
+    visionTitle: "",
+    visionBody: "",
+    ctaTitle: "",
+    ctaBody: "",
+    ctaImageUrl: "",
+    footerBlurb: "",
+    contactEmail: "",
+    chairmanName: "",
+    chairmanPhone: "",
+    elderName: "",
+    elderPhone: "",
+    budgetGoal: 0,
+    paybill: "",
+    paybillAccount: "",
+    wordOfFaith: "",
+  },
+  posters: [],
+  slides: [],
+  values: [],
+  committee: [],
+  announcements: [],
+  events: [],
+  gallery: [],
+  ministries: [],
+  users: [],
+};
+
 type LegacyCollection = {
   id: number;
   name: string;
@@ -55,7 +97,7 @@ function describe(err: unknown) {
 }
 
 export function CmsProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<CmsState | null>(null);
+  const [state, setState] = useState<CmsState>(FALLBACK_CMS_STATE);
 
   const apply = (updater: (current: CmsState) => CmsState) =>
     setState((current) => (current ? updater(current) : current));
@@ -85,7 +127,24 @@ export function CmsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const boot = async () => {
-      const seed = await createSeedState();
+      let seed: CmsState;
+      try {
+        seed = await createSeedState();
+      } catch {
+        seed = {
+          site: { churchName: "ZUSDA", tagline: "", heroEyebrow: "", heroTitle: "", heroSubtitle: "", heroMeta: "", heroImageUrl: "", countdownDate: "", aboutEyebrow: "", aboutTitle: "", aboutBody: "", missionTitle: "", missionBody: "", visionTitle: "", visionBody: "", ctaTitle: "", ctaBody: "", ctaImageUrl: "", footerBlurb: "", contactEmail: "", chairmanName: "", chairmanPhone: "", elderName: "", elderPhone: "", budgetGoal: 0, paybill: "", paybillAccount: "", wordOfFaith: "" },
+          posters: [],
+          slides: [],
+          values: [],
+          committee: [],
+          announcements: [],
+          events: [],
+          gallery: [],
+          ministries: [],
+          users: [],
+        };
+      }
+
       try {
         const legacy = readJson<LegacyCollection[]>(LEGACY_COLLECTIONS_KEY);
         if (legacy?.some((item) => item.posterUrl)) {
@@ -121,7 +180,11 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       }
 
       const base = content ?? {};
-      const next = { ...seed, ...base, site: base.site ?? seed.site, users } as CmsState;
+      const mergedSite = { ...seed.site, ...(base.site ?? {}) };
+      if (Number.isNaN(new Date(mergedSite.countdownDate).getTime())) {
+        mergedSite.countdownDate = seed.site.countdownDate;
+      }
+      const next = { ...seed, ...base, site: mergedSite, users } as CmsState;
       if (!cancelled) setState(next);
     };
     void boot();

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { writeJson } from "@/cms/utils";
+import { sanitizeCmsAssetRefs, writeJson } from "@/cms/utils";
 import { saveCollections } from "./eventCollections";
 
 describe("storage safety", () => {
@@ -67,5 +67,35 @@ describe("storage safety", () => {
         },
       ]),
     ).not.toThrow();
+  });
+
+  it("restores seed asset paths when cached build URLs are stale", () => {
+    const stale = {
+      committee: [
+        {
+          id: 1,
+          name: "Gregory Daghe",
+          photoUrl: "/assets/Gregory_Daghe-Cimn_Pl-.jpeg",
+          department: "General Oversight",
+          isChair: true,
+        },
+      ],
+    };
+
+    const seed = {
+      committee: [
+        {
+          id: 1,
+          name: "Gregory Daghe",
+          photoUrl: "/src/assets/committee/Gregory_Daghe.jpeg",
+          department: "General Oversight",
+          isChair: true,
+        },
+      ],
+    };
+
+    const fixed = sanitizeCmsAssetRefs(stale, seed);
+
+    expect(fixed.committee[0].photoUrl).toBe("/src/assets/committee/Gregory_Daghe.jpeg");
   });
 });

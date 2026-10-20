@@ -5,7 +5,7 @@ import * as cmsApi from "@/api/cms";
 import { LOCAL_ADMIN_TOKEN } from "@/lib/testAdmin";
 import type { CmsCollection, CmsState, CmsUser, SiteSettings } from "./types";
 import { createSeedState, postersFromLegacyCollections } from "./seed";
-import { nextId, readJson, writeJson } from "./utils";
+import { nextId, readJson, sanitizeCmsAssetRefs, writeJson } from "./utils";
 
 const STORAGE_KEY = "zusda-cms-v1";
 const USERS_KEY = "zusda-cms-users-v1";
@@ -96,7 +96,8 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       }
 
       const cached = readJson<CmsState>(STORAGE_KEY);
-      const users = readJson<CmsUser[]>(USERS_KEY) ?? cached?.users ?? seed.users;
+      const safeCached = cached ? sanitizeCmsAssetRefs(cached, seed) : cached;
+      const users = readJson<CmsUser[]>(USERS_KEY) ?? safeCached?.users ?? seed.users;
 
       let content: Partial<CmsState> | null = null;
       try {
@@ -114,7 +115,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         }
         if (remote.site) content = remote;
       } catch {
-        content = cached;
+        content = safeCached;
         toast.error("Could not reach the server. Showing saved content.");
         setTimeout(() => void refresh(), 15000);
       }

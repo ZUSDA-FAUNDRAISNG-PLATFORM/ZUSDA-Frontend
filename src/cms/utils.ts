@@ -48,6 +48,30 @@ export function readJson<T>(key: string): T | null {
   return null;
 }
 
+export function sanitizeCmsAssetRefs<T>(value: T, fallback: T): T {
+  if (!value || typeof value !== "object") return value;
+
+  if (Array.isArray(value)) {
+    return value.map((item, index) => sanitizeCmsAssetRefs(item, Array.isArray(fallback) ? fallback[index] : undefined as never)) as T;
+  }
+
+  const repaired = { ...(value as Record<string, unknown>) };
+  const fallbackObject = (fallback && typeof fallback === "object" ? (fallback as Record<string, unknown>) : {}) as Record<string, unknown>;
+
+  for (const [key, entry] of Object.entries(repaired)) {
+    if (typeof entry === "string" && entry.startsWith("/assets/") && typeof fallbackObject[key] === "string") {
+      repaired[key] = fallbackObject[key];
+      continue;
+    }
+
+    if (entry && typeof entry === "object") {
+      repaired[key] = sanitizeCmsAssetRefs(entry as never, (fallbackObject[key] as never) ?? ({} as never));
+    }
+  }
+
+  return repaired as T;
+}
+
 function stripDataUrls(input: unknown): unknown {
   if (typeof input === "string") {
     return input.startsWith("data:") ? "" : input;

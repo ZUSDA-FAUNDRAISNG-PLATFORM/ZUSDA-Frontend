@@ -7,6 +7,8 @@ import GetInvolvedSection from "@/components/GetInvolvedSection";
 import CommitteeSection from "@/components/CommitteeSection";
 import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
+import ScrollExtras from "@/components/ScrollExtras";
+import Confetti from "@/components/Confetti";
 import { AnnouncementsSection, EventsSection, GallerySection } from "@/components/CmsSections";
 import { InvolvementProvider, useInvolvement } from "@/components/InvolvementDialogs";
 import { usePublished } from "@/cms/CmsProvider";
@@ -49,6 +51,8 @@ const Index = () => (
       <CTASection />
       <Footer />
       <MobileStickyActions />
+      <ScrollExtras />
+      <Confetti />
     </div>
   </InvolvementProvider>
 );

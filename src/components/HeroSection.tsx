@@ -1,6 +1,7 @@
 import { ChevronDown } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import Reveal from "./Reveal";
+import DaysToGo from "./DaysToGo";
 import { useInvolvement } from "./InvolvementDialogs";
 import { useCms, usePublished } from "@/cms/CmsProvider";
 
@@ -14,8 +15,8 @@ const HeroSection = () => {
   return (
     <section id="home" className="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
       <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${site.heroImageUrl})` }} />
-      <div className="absolute inset-0 bg-cream/40" />
-      <div className="absolute inset-0 bg-gradient-to-b from-cream/10 via-transparent to-cream" />
+      <div className="absolute inset-0 bg-cream/15" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-cream/80" />
 
       <div className="relative z-10 container mx-auto px-4 py-28 sm:py-32">
         <div className="mx-auto max-w-4xl p-6 text-center sm:p-10 md:p-14">
@@ -34,6 +35,7 @@ const HeroSection = () => {
             <p className="mb-10 text-sm font-medium text-navy/70 sm:text-base md:text-lg">{site.heroMeta}</p>
           </Reveal>
 
+          <DaysToGo date={site.countdownDate} />
           <Reveal direction="zoom" delay={460}>
             <CountdownTimer targetDate={site.countdownDate} />
           </Reveal>

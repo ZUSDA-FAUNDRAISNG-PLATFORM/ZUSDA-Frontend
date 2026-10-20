@@ -39,7 +39,7 @@ const CommitteeSection = () => {
             <div className="rounded-xl border border-gold/20 bg-navy p-6 text-primary-foreground sm:p-8">
               <div className="flex flex-col items-center gap-6 sm:flex-row">
                 <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-2 ring-gold/50 ring-offset-2 ring-offset-navy sm:h-32 sm:w-32">
-                  {chair.photoUrl ? <img src={chair.photoUrl} alt={chair.name} className="h-full w-full object-cover" /> : null}
+                  {chair.photoUrl ? <img loading="lazy" decoding="async" src={chair.photoUrl} alt={chair.name} className="h-full w-full object-cover" /> : null}
                 </div>
                 <div className="text-center sm:text-left">
                   <p className="mb-1 text-xs font-medium tracking-wide text-gold">{chair.position}</p>
@@ -64,7 +64,7 @@ const CommitteeSection = () => {
                       <div key={leader.id} className="group flex w-28 flex-col items-center gap-2">
                         <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-navy/10 ring-2 ring-gold/60 transition-all duration-300 group-hover:scale-110 group-hover:ring-gold sm:h-24 sm:w-24">
                           {leader.photoUrl ? (
-                            <img src={leader.photoUrl} alt={leader.name} className="h-full w-full object-cover" />
+                            <img loading="lazy" decoding="async" src={leader.photoUrl} alt={leader.name} className="h-full w-full object-cover" />
                           ) : (
                             <span className="font-display text-sm font-bold text-navy">{initials(leader.name)}</span>
                           )}

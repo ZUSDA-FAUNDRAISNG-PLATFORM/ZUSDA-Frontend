@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Reveal from "@/components/Reveal";
+import ShareButton from "@/components/ShareButton";
 import { usePublished } from "@/cms/CmsProvider";
 import { useInvolvement } from "@/components/InvolvementDialogs";
 
@@ -37,7 +38,7 @@ const ThemeSection = () => {
             <Reveal key={poster.id} direction="zoom" delay={i * 140}>
               <article className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow group overflow-hidden rounded-2xl">
                 <div className="flex max-h-[28rem] items-center justify-center overflow-hidden p-3">
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={poster.imageUrl}
                     alt={poster.title}
                     className="max-h-[26rem] w-auto max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
@@ -59,6 +60,9 @@ const ThemeSection = () => {
                     {poster.ctaLabel || `Support ${poster.title}`}
                     <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />
                   </button>
+                  <div>
+                    <ShareButton title={poster.title} text={`Support ${poster.title} — ZUSDA Evangelical Mission 2026`} className="mt-3 border-navy/20 text-navy hover:bg-navy/5" />
+                  </div>
                 </div>
               </article>
             </Reveal>

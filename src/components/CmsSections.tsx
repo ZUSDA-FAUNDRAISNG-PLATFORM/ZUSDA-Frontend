@@ -1,4 +1,6 @@
+import { useState } from "react";
 import Reveal from "@/components/Reveal";
+import Lightbox from "@/components/Lightbox";
 import { usePublished } from "@/cms/CmsProvider";
 
 export const AnnouncementsSection = () => {
@@ -41,7 +43,7 @@ export const EventsSection = () => {
               <article className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow group h-full overflow-hidden rounded-2xl">
                 {item.imageUrl ? (
                   <div className="overflow-hidden">
-                    <img
+                    <img loading="lazy" decoding="async"
                       src={item.imageUrl}
                       alt={item.title}
                       className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -64,6 +66,7 @@ export const EventsSection = () => {
 
 export const GallerySection = () => {
   const items = usePublished("gallery");
+  const [active, setActive] = useState<number | null>(null);
   if (!items.length) return null;
   return (
     <section id="gallery" className="relative overflow-hidden bg-white py-16 sm:py-24">
@@ -74,22 +77,30 @@ export const GallerySection = () => {
         <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
           {items.map((item, i) => (
             <Reveal key={item.id} direction="zoom" delay={(i % 4) * 90}>
-              <figure className="hover-lift group relative overflow-hidden rounded-2xl bg-cream">
+              <button
+                type="button"
+                onClick={() => setActive(i)}
+                aria-label={`Open photo${item.caption ? `: ${item.caption}` : ""}`}
+                className="hover-lift group relative block w-full overflow-hidden rounded-2xl bg-cream"
+              >
                 <img
+                  loading="lazy"
+                  decoding="async"
                   src={item.imageUrl}
                   alt={item.caption}
                   className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 {item.caption ? (
-                  <figcaption className="bg-navy/85 absolute inset-x-0 bottom-0 translate-y-full p-2 text-xs text-white transition-transform duration-300 group-hover:translate-y-0">
+                  <span className="absolute inset-x-0 bottom-0 bg-navy/85 p-2 text-left text-xs text-white transition-transform duration-300 md:translate-y-full md:group-hover:translate-y-0">
                     {item.caption}
-                  </figcaption>
+                  </span>
                 ) : null}
-              </figure>
+              </button>
             </Reveal>
           ))}
         </div>
       </div>
+      <Lightbox items={items} index={active} onClose={() => setActive(null)} onChange={setActive} />
     </section>
   );
 };

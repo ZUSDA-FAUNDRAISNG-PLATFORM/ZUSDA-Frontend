@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   TrendingUp,
   Copy,
+  Check,
   Loader2,
   Target,
   HandCoins,
@@ -13,6 +14,7 @@ import {
   Globe2,
 } from "lucide-react";
 import { toast } from "sonner";
+import ShareButton from "@/components/ShareButton";
 import { useInvolvement } from "./InvolvementDialogs";
 import { useEventCollections } from "@/hooks/useEventCollections";
 import { useCms, usePublished } from "@/cms/CmsProvider";
@@ -96,6 +98,7 @@ const BudgetSection = () => {
   const [recent, setRecent] = useState<RecentContribution[]>(() => loadLocalContributions().slice(0, 3));
   const [loading, setLoading] = useState(true);
   const [pulseAmount, setPulseAmount] = useState<number | null>(null);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const liveErrorToastRef = useRef(false);
   const previousIdsRef = useRef<Set<number>>(new Set(loadLocalContributions().map((item) => item.id)));
   const selectedProjectIdRef = useRef<number | null>(selectedProjectId);
@@ -110,6 +113,8 @@ const BudgetSection = () => {
   const copy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} copied`);
+    setCopiedKey(label);
+    window.setTimeout(() => setCopiedKey(null), 1800);
   };
 
   const refreshData = async () => {
@@ -299,7 +304,7 @@ const BudgetSection = () => {
                   >
                     <div className="mb-1 flex items-center justify-between">
                       <p className="text-[11px] uppercase tracking-wider text-primary-foreground/50">Paybill</p>
-                      <Copy className="text-gold/60 group-hover:text-gold" size={14} />
+                      {copiedKey === "Paybill" ? <Check className="text-green-400" size={14} /> : {copiedKey === "Account number" ? <Check className="text-green-400" size={14} /> : <Copy className="text-gold/60 group-hover:text-gold" size={14} />}}
                     </div>
                     <p className="break-all font-display text-2xl font-bold text-primary-foreground">{paybill}</p>
                   </button>
@@ -323,6 +328,7 @@ const BudgetSection = () => {
                   Give Now
                   <ArrowRight size={16} />
                 </button>
+                <ShareButton title={causeName} text={`Support ${causeName} — ZUSDA Evangelical Mission 2026`} className="mt-3 w-full justify-center border-white/20 text-white hover:bg-white/10" />
               </motion.div>
 
               <motion.div

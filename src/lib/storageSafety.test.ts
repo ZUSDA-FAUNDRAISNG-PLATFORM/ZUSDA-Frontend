@@ -98,4 +98,24 @@ describe("storage safety", () => {
 
     expect(fixed.committee[0].photoUrl).toBe("/src/assets/committee/Gregory_Daghe.jpeg");
   });
+
+  it("replaces invalid cached countdown dates with the seed value", () => {
+    const stale = {
+      site: {
+        countdownDate: "not-a-date",
+        churchName: "ZUSDA",
+      },
+    };
+
+    const seed = {
+      site: {
+        countdownDate: "2026-12-13T00:00:00",
+        churchName: "ZUSDA",
+      },
+    };
+
+    const fixed = sanitizeCmsAssetRefs(stale, seed);
+
+    expect(fixed.site.countdownDate).toBe("2026-12-13T00:00:00");
+  });
 });

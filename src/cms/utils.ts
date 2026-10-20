@@ -39,34 +39,13 @@ export function readJson<T>(key: string): T | null {
     try {
       const raw = read();
       if (!raw) continue;
-      const parsed = JSON.parse(raw) as T;
-      return stripStaleAssetUrls(parsed) as T;
+      return JSON.parse(raw) as T;
     } catch {
       // ignore corrupt or unavailable cache entries and continue to the next fallback.
     }
   }
 
   return null;
-}
-
-function stripStaleAssetUrls(input: unknown): unknown {
-  if (typeof input === "string") {
-    return input.startsWith("/assets/") ? "" : input;
-  }
-
-  if (Array.isArray(input)) {
-    return input.map((item) => stripStaleAssetUrls(item));
-  }
-
-  if (input && typeof input === "object") {
-    const cleaned: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(input as Record<string, unknown>)) {
-      cleaned[key] = stripStaleAssetUrls(value);
-    }
-    return cleaned;
-  }
-
-  return input;
 }
 
 export function sanitizeCmsAssetRefs<T>(value: T, fallback: T): T {
@@ -81,6 +60,16 @@ export function sanitizeCmsAssetRefs<T>(value: T, fallback: T): T {
 
   for (const [key, entry] of Object.entries(repaired)) {
     if (typeof entry === "string" && entry.startsWith("/assets/") && typeof fallbackObject[key] === "string") {
+      repaired[key] = fallbackObject[key];
+      continue;
+    }
+
+    if (
+      key === "countdownDate" &&
+      typeof entry === "string" &&
+      Number.isNaN(new Date(entry).getTime()) &&
+      typeof fallbackObject[key] === "string"
+    ) {
       repaired[key] = fallbackObject[key];
       continue;
     }
@@ -115,7 +104,7 @@ function stripDataUrls(input: unknown): unknown {
 
 export function writeJson(key: string, value: unknown) {
   const payload = JSON.stringify(value);
-  const compact = JSON.stringify(stripDataUrls(stripStaleAssetUrls(value)));
+  const compact = JSON.stringify(stripDataUrls(value));
 
   const tryWrite = (store: Storage, storageKey: string, nextPayload: string) => {
     store.setItem(storageKey, nextPayload);

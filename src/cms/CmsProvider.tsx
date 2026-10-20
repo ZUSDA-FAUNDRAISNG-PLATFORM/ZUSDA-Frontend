@@ -7,7 +7,7 @@ import type { CmsCollection, CmsState, CmsUser, SiteSettings } from "./types";
 import { createSeedState, postersFromLegacyCollections } from "./seed";
 import { nextId, readJson, sanitizeCmsAssetRefs, writeJson } from "./utils";
 
-const STORAGE_KEY = "zusda-cms-v1";
+const STORAGE_KEY = "zusda-cms-v2";
 const USERS_KEY = "zusda-cms-users-v1";
 const LEGACY_COLLECTIONS_KEY = "zusda-local-collections-v1";
 const CMS_EVENT = "zusda:cms-changed";

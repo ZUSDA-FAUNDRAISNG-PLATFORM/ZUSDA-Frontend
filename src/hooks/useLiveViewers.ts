@@ -71,36 +71,31 @@ export function useLiveViewers() {
         setCount(activeViewers().length || (document.hidden ? 0 : 1));
       }
     };
+    const clearPresence = () => {
+      const remaining = activeViewers().filter((item) => item.id !== id);
+      try {
+        localStorage.setItem(PRESENCE_KEY, JSON.stringify(remaining));
+      } catch {
+        try {
+          sessionStorage.setItem(`${PRESENCE_KEY}:session`, JSON.stringify(remaining));
+        } catch {
+          // ignore cleanup quota errors.
+        }
+      }
+    };
 
     publish();
     const interval = window.setInterval(publish, 3000);
     document.addEventListener("visibilitychange", publish);
     window.addEventListener("storage", onStorage);
-    window.addEventListener("beforeunload", () => {
-      try {
-        localStorage.setItem(PRESENCE_KEY, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
-      } catch {
-        try {
-          sessionStorage.setItem(`${PRESENCE_KEY}:session`, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
-        } catch {
-          // ignore cleanup quota errors.
-        }
-      }
-    });
+    window.addEventListener("beforeunload", clearPresence);
 
     return () => {
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", publish);
       window.removeEventListener("storage", onStorage);
-      try {
-        localStorage.setItem(PRESENCE_KEY, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
-      } catch {
-        try {
-          sessionStorage.setItem(`${PRESENCE_KEY}:session`, JSON.stringify(activeViewers().filter((item) => item.id !== id)));
-        } catch {
-          // ignore cleanup quota errors.
-        }
-      }
+      window.removeEventListener("beforeunload", clearPresence);
+      clearPresence();
     };
   }, []);
 

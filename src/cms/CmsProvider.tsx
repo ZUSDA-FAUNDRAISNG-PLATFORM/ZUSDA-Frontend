@@ -119,7 +119,7 @@ let seedPromise: Promise<any> | null = null;
 const getSeed = () => (seedPromise ??= createSeedState());
 
 export function CmsProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<CmsState>(FALLBACK_CMS_STATE);
+  const [state, setState] = useState<CmsState | null>(null);
 
   const apply = (updater: (current: CmsState) => CmsState) =>
     setState((current) => (current ? updater(current) : current));
@@ -149,22 +149,22 @@ export function CmsProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     const boot = async () => {
+      const cached = readJson<CmsState>(STORAGE_KEY);
+      const cachedUsers = readJson<CmsUser[]>(USERS_KEY) ?? cached?.users ?? FALLBACK_CMS_STATE.users;
+      if (cached) {
+        setState({
+          ...FALLBACK_CMS_STATE,
+          ...cached,
+          site: { ...FALLBACK_CMS_STATE.site, ...(cached.site ?? {}) },
+          users: cachedUsers,
+        });
+      }
+
       let seed: CmsState;
       try {
-        seed = await createSeedState();
+        seed = await getSeed();
       } catch {
-        seed = {
-          site: { churchName: "ZUSDA", tagline: "", heroEyebrow: "", heroTitle: "", heroSubtitle: "", heroMeta: "", heroImageUrl: "", countdownDate: "", aboutEyebrow: "", aboutTitle: "", aboutBody: "", missionTitle: "", missionBody: "", visionTitle: "", visionBody: "", ctaTitle: "", ctaBody: "", ctaImageUrl: "", footerBlurb: "", contactEmail: "", chairmanName: "", chairmanPhone: "", elderName: "", elderPhone: "", budgetGoal: 0, paybill: "", paybillAccount: "", wordOfFaith: "" },
-          posters: [],
-          slides: [],
-          values: [],
-          committee: [],
-          announcements: [],
-          events: [],
-          gallery: [],
-          ministries: [],
-          users: [],
-        };
+        seed = FALLBACK_CMS_STATE;
       }
 
       try {
@@ -176,16 +176,37 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         // ignore legacy migration issues
       }
 
-      const cached = readJson<CmsState>(STORAGE_KEY);
       const safeCached = cached ? sanitizeCmsAssetRefs(cached, seed) : cached;
       const users = readJson<CmsUser[]>(USERS_KEY) ?? safeCached?.users ?? seed.users;
 
-      let content: Partial<CmsState> | null = null;
+      const buildState = (content: Partial<CmsState> | null): CmsState => {
+        const base = content ?? {};
+        const mergedSite = { ...seed.site, ...(base.site ?? {}) };
+        if (Number.isNaN(new Date(mergedSite.countdownDate).getTime())) {
+          mergedSite.countdownDate = seed.site.countdownDate;
+        }
+        const next = { ...seed, ...base, site: mergedSite, users } as CmsState;
+        const fixPhotos = (remoteList: any[], seedList: any[]) =>
+          remoteList.map((item) => {
+            if (!item || typeof item.photoUrl !== "string" || !item.photoUrl.startsWith("/assets/")) return item;
+            const match = seedList.find((x) => x && x.name === item.name && typeof x.photoUrl === "string");
+            return match ? { ...item, photoUrl: match.photoUrl } : item;
+          });
+        for (const k of Object.keys(seed)) {
+          if (k === "users") continue;
+          const seedList = (seed as any)[k];
+          const nextList = (next as any)[k];
+          if (Array.isArray(seedList) && Array.isArray(nextList)) {
+            (next as any)[k] = fixPhotos(nextList, seedList);
+          }
+        }
+        return next;
+      };
+
+      if (!cancelled) setState(buildState(safeCached ?? null));
+
       try {
-        let remote = await Promise.race([
-          cmsApi.fetchCms(),
-          new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 8000)),
-        ]);
+        let remote = await cmsApi.fetchCms();
         if (!remote.site && hasServerToken()) {
           try {
             const { users: _ignored, ...seedContent } = seed;
@@ -194,32 +215,16 @@ export function CmsProvider({ children }: { children: ReactNode }) {
             remote = await cmsApi.fetchCms();
           }
         }
-        if (remote.site) content = repairRemote(remote, seed);
+        if (remote.site && !cancelled) {
+          setState(buildState(repairRemote(remote, seed)));
+        }
       } catch {
-        content = safeCached;
-        toast.error("Could not reach the server. Showing saved content.");
-        setTimeout(() => void refresh(), 15000);
+        if (cancelled) return;
+        if (!safeCached) toast.error("Could not reach the server. Showing default content.");
+        window.setTimeout(() => {
+          if (!cancelled) void refresh();
+        }, 15000);
       }
-
-      const base = content ?? {};
-      const mergedSite = { ...seed.site, ...(base.site ?? {}) };
-      if (Number.isNaN(new Date(mergedSite.countdownDate).getTime())) {
-        mergedSite.countdownDate = seed.site.countdownDate;
-      }
-      const next = { ...seed, ...base, site: mergedSite, users } as CmsState;
-      const fixPhotos = (remoteList: any[], seedList: any[]) =>
-        remoteList.map((item) => {
-          if (!item || typeof item.photoUrl !== "string" || !item.photoUrl.startsWith("/assets/")) return item;
-          const match = seedList.find((x) => x && x.name === item.name && typeof x.photoUrl === "string");
-          return match ? { ...item, photoUrl: match.photoUrl } : item;
-        });
-      for (const k of Object.keys(seed)) {
-        if (k === "users") continue;
-        const sv = (seed as any)[k];
-        const nv = (next as any)[k];
-        if (Array.isArray(sv) && Array.isArray(nv)) (next as any)[k] = fixPhotos(nv, sv);
-      }
-      if (!cancelled) setState(next);
     };
     void boot();
     return () => {

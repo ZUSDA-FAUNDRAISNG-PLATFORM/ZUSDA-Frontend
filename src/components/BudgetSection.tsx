@@ -1,5 +1,6 @@
 import { AnimatePresence, motion, useInView } from "framer-motion";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   TrendingUp,
   Copy,
@@ -94,16 +95,32 @@ const BudgetSection = () => {
   const featured = posters.find((item) => item.featured) ?? posters[0];
   const { activeCollection } = useEventCollections();
   const selectedProjectId = featured?.projectId ?? activeCollection?.projectId ?? null;
+  const queryClient = useQueryClient();
   const [apiRaised, setApiRaised] = useState(0);
   const [recent, setRecent] = useState<RecentContribution[]>(() => loadLocalContributions().slice(0, 3));
-  const [loading, setLoading] = useState(true);
   const [pulseAmount, setPulseAmount] = useState<number | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const liveErrorToastRef = useRef(false);
   const previousIdsRef = useRef<Set<number>>(new Set(loadLocalContributions().map((item) => item.id)));
-  const selectedProjectIdRef = useRef<number | null>(selectedProjectId);
   const viewerCount = useLiveViewers();
-  selectedProjectIdRef.current = selectedProjectId;
+  const {
+    data: projectData,
+    isLoading: projectsLoading,
+    error: projectsError,
+  } = useQuery({
+    queryKey: ["public-projects"],
+    queryFn: () => apiGet<ProjectSummary[]>("/projects/"),
+  });
+  const {
+    data: recentData,
+    isLoading: recentLoading,
+    error: recentError,
+  } = useQuery({
+    queryKey: ["recent-contributions", selectedProjectId, 3],
+    queryFn: () => getRecentContributions({ projectId: selectedProjectId ?? undefined, limit: 3 }),
+  });
+  const loading = projectsLoading || recentLoading;
+  const budgetError = projectsError || recentError;
 
   const target = Number(state.site.budgetGoal) > 0 ? Number(state.site.budgetGoal) : 416000;
   const paybill = state.site.paybill || "247247";
@@ -117,47 +134,45 @@ const BudgetSection = () => {
     window.setTimeout(() => setCopiedKey(null), 1800);
   };
 
-  const refreshData = async () => {
-    try {
-      const projectId = selectedProjectIdRef.current;
-      const [projectData, recentData] = await Promise.all([
-        apiGet<ProjectSummary[]>("/projects/"),
-        getRecentContributions({ projectId: projectId ?? undefined, limit: 3 }),
-      ]);
+  useEffect(() => {
+    if (!projectData && !recentData) return;
 
-      const projects = Array.isArray(projectData) ? projectData : [];
-      const activeProject =
-        (projectId ? projects.find((item) => item.id === projectId) : undefined) ?? projects[0] ?? null;
-      const apiRecent = (recentData || []).map((item) => ({
-        id: item.id,
-        hash: donorHash(`${item.id}:${item.created_at}`),
-        amount: item.amount,
-        created_at: item.created_at,
-      }));
-      const nextRecent = mergeRecent(apiRecent, loadLocalContributions());
-      const incoming = nextRecent.filter((item) => !previousIdsRef.current.has(item.id));
+    const projects = Array.isArray(projectData) ? projectData : [];
+    const activeProject =
+      (selectedProjectId ? projects.find((item) => item.id === selectedProjectId) : undefined) ??
+      projects[0] ??
+      null;
+    const apiRecent = (recentData ?? []).map((item) => ({
+      id: item.id,
+      hash: donorHash(`${item.id}:${item.created_at}`),
+      amount: item.amount,
+      created_at: item.created_at,
+    }));
+    const nextRecent = mergeRecent(apiRecent, loadLocalContributions());
+    const incoming = nextRecent.filter((item) => !previousIdsRef.current.has(item.id));
 
-      if (incoming.length > 0 && previousIdsRef.current.size > 0) {
-        const newest = incoming[0];
-        setPulseAmount(newest.amount);
-      }
-
-      previousIdsRef.current = new Set(nextRecent.map((item) => item.id));
-      setApiRaised(activeProject?.current_amount ?? 0);
-      setRecent(nextRecent);
-    } catch {
-      setRecent(loadLocalContributions().slice(0, 3));
-      if (!liveErrorToastRef.current) {
-        liveErrorToastRef.current = true;
-      }
-    } finally {
-      setLoading(false);
+    if (incoming.length > 0 && previousIdsRef.current.size > 0) {
+      setPulseAmount(incoming[0].amount);
     }
-  };
+
+    previousIdsRef.current = new Set(nextRecent.map((item) => item.id));
+    if (projectData) setApiRaised(activeProject?.current_amount ?? 0);
+    setRecent(nextRecent);
+  }, [projectData, recentData, selectedProjectId]);
 
   useEffect(() => {
-    void refreshData();
-    const interval = window.setInterval(() => void refreshData(), 4000);
+    if (budgetError) {
+      setRecent(loadLocalContributions().slice(0, 3));
+      if (!liveErrorToastRef.current) {
+        toast.error("Could not refresh live budget data.");
+        liveErrorToastRef.current = true;
+      }
+      return;
+    }
+    liveErrorToastRef.current = false;
+  }, [budgetError]);
+
+  useEffect(() => {
     const handler = (event: Event) => {
       const detail = (event as CustomEvent<{ amount?: number; seed?: string }>).detail;
       const amount = Number(detail?.amount);
@@ -166,19 +181,17 @@ const BudgetSection = () => {
         setRecent((current) => mergeRecent(current, [gift]));
         setPulseAmount(amount);
       }
-      void refreshData();
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["public-projects"] }),
+        queryClient.invalidateQueries({ queryKey: ["recent-contributions"] }),
+      ]);
     };
 
     window.addEventListener("zusda:contribution", handler);
     return () => {
-      window.clearInterval(interval);
       window.removeEventListener("zusda:contribution", handler);
     };
-  }, []);
-
-  useEffect(() => {
-    void refreshData();
-  }, [selectedProjectId]);
+  }, [queryClient]);
 
   const raised = Math.max(apiRaised, sumLocalContributions());
   const remaining = Math.max(target - raised, 0);
@@ -413,7 +426,7 @@ const BudgetSection = () => {
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-gold">Live viewers</p>
+                    <p className="text-xs font-medium text-gold">Open tabs</p>
                     <motion.p
                       key={viewerCount}
                       initial={{ opacity: 0, y: 8, scale: 0.96 }}
@@ -429,7 +442,7 @@ const BudgetSection = () => {
                 </div>
                 <div className="mt-4 flex items-center gap-2 text-sm text-primary-foreground/70">
                   <Clock3 size={14} className="text-gold" />
-                  <span>People currently on this site</span>
+                  <span>Across this browser</span>
                 </div>
               </motion.div>
             </div>

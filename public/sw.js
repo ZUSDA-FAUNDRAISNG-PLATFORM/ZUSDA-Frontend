@@ -1,4 +1,4 @@
-const CACHE = "zusda-v1";
+const CACHE = "zusda-v2";
 
 self.addEventListener("install", () => self.skipWaiting());
 
@@ -20,11 +20,29 @@ self.addEventListener("fetch", (e) => {
     e.respondWith(
       fetch(req)
         .then((r) => {
-          const copy = r.clone();
-          caches.open(CACHE).then((c) => c.put("/", copy));
+          if (r.ok) {
+            const copy = r.clone();
+            return caches.open(CACHE).then((c) => c.put("/", copy)).then(() => r);
+          }
           return r;
         })
         .catch(() => caches.match("/"))
+    );
+    return;
+  }
+
+  if (url.pathname.startsWith("/assets/")) {
+    e.respondWith(
+      caches.match(req).then((hit) => {
+        if (hit) return hit;
+        return fetch(req).then((r) => {
+          if (r.ok) {
+            const copy = r.clone();
+            return caches.open(CACHE).then((c) => c.put(req, copy)).then(() => r);
+          }
+          return r;
+        });
+      })
     );
     return;
   }

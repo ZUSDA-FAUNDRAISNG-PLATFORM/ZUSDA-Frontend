@@ -5,7 +5,8 @@ const Overview = () => {
   const { state } = useCms();
   const cards = [
     { label: "Posters", count: state.posters.length, to: "/dashboard/posters" },
-    { label: "Slider slides", count: state.slides.length, to: "/dashboard/slider" },
+    { label: "Hero slideshow", count: state.slides.filter((slide) => slide.placement === "hero").length, to: "/dashboard/slider" },
+    { label: "Scripture cards", count: state.slides.filter((slide) => slide.placement !== "hero").length, to: "/dashboard/scripture-cards" },
     { label: "Committee", count: state.committee.length, to: "/dashboard/committee" },
     { label: "Announcements", count: state.announcements.length, to: "/dashboard/announcements" },
     { label: "Events", count: state.events.length, to: "/dashboard/events" },

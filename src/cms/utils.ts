@@ -200,3 +200,43 @@ export function compressImageToDataUrl(file: File, maxSize = 1200, quality = 0.8
     reader.readAsDataURL(file);
   });
 }
+
+export function compressImage(file: File, maxWidth = 1600, quality = 0.78): Promise<string> {
+  if (!file.type.startsWith("image/") || file.type === "image/svg+xml" || file.type === "image/gif") {
+    return Promise.reject(new Error("Choose a JPG, PNG, or WebP image."));
+  }
+  if (!Number.isFinite(maxWidth) || maxWidth <= 0) {
+    return Promise.reject(new Error("Image width limit must be greater than zero."));
+  }
+
+  return new Promise<string>((resolve, reject) => {
+    const objectUrl = URL.createObjectURL(file);
+    const image = new Image();
+    image.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("Could not read the selected image."));
+    };
+    image.onload = () => {
+      try {
+        const scale = Math.min(1, maxWidth / image.width);
+        const canvas = document.createElement("canvas");
+        canvas.width = Math.round(image.width * scale);
+        canvas.height = Math.round(image.height * scale);
+        const context = canvas.getContext("2d");
+        if (!context) throw new Error("Could not process the selected image.");
+
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        const compressed = canvas.toDataURL("image/webp", quality);
+        if (!compressed.startsWith("data:image/webp;")) {
+          throw new Error("This browser could not convert the image to WebP.");
+        }
+        resolve(compressed);
+      } catch (error) {
+        reject(error);
+      } finally {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+    image.src = objectUrl;
+  });
+}

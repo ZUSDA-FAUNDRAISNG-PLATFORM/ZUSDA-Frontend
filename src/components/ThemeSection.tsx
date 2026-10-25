@@ -49,7 +49,7 @@ const ThemeSection = () => {
                 </div>
                 <div className="border-t border-white/60 bg-white/50 px-4 py-4">
                   <p className="mb-1 text-xs font-medium tracking-wide text-gold-dark">{poster.eyebrow || "Outreach"}</p>
-                  <h3 className="mb-3 font-display text-xl font-semibold text-navy">{poster.title}</h3>
+                  <h3 className="mb-3 break-words font-display text-xl font-semibold text-navy">{poster.title}</h3>
                   <button
                     type="button"
                     onClick={() => {
@@ -58,7 +58,7 @@ const ThemeSection = () => {
                       }
                       open("give", { projectId: poster.projectId, causeName: poster.title });
                     }}
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-navy underline decoration-gold decoration-2 underline-offset-4 transition-colors hover:text-gold-dark"
+                    className="inline-flex min-h-11 items-center gap-2 text-left text-sm font-semibold text-navy underline decoration-gold decoration-2 underline-offset-4 transition-colors hover:text-gold-dark"
                   >
                     {poster.ctaLabel || `Support ${poster.title}`}
                     <ArrowRight size={14} className="transition-transform duration-300 group-hover:translate-x-1" />

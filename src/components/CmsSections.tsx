@@ -49,7 +49,7 @@ export const EventsSection = () => {
                       alt={item.title}
                       width={1200}
                       height={600}
-                      className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                      className="aspect-[16/9] w-full bg-cream object-contain transition-transform duration-500"
                     />
                   </div>
                 ) : null}
@@ -84,14 +84,14 @@ export const GallerySection = () => {
                 type="button"
                 onClick={() => setActive(i)}
                 aria-label={`Open photo${item.caption ? `: ${item.caption}` : ""}`}
-                className="hover-lift group relative block w-full overflow-hidden rounded-2xl bg-cream"
+                className="hover-lift group relative block min-h-11 w-full overflow-hidden rounded-2xl bg-cream"
               >
                 <CmsImage
                   src={item.imageUrl}
                   alt={item.caption}
                   width={600}
                   height={600}
-                  className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  className="aspect-square w-full object-contain transition-transform duration-500"
                 />
                 {item.caption ? (
                   <span className="absolute inset-x-0 bottom-0 bg-navy/85 p-2 text-left text-xs text-white transition-transform duration-300 md:translate-y-full md:group-hover:translate-y-0">

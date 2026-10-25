@@ -77,11 +77,11 @@ const CommitteePage = () => {
             <Textarea className="mt-1.5" value={editing.bio || ""} onChange={(e) => setEditing({ ...editing, bio: e.target.value })} />
           </div>
           <ImageField label="Photo" value={editing.photoUrl || ""} onChange={(photoUrl) => setEditing({ ...editing, photoUrl })} />
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={Boolean(editing.isChair)} onChange={(e) => setEditing({ ...editing, isChair: e.target.checked })} />
             Mission chairman
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={Boolean(editing.published)} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} />
             Published
           </label>
@@ -96,8 +96,8 @@ const CommitteePage = () => {
         {[...state.committee].sort((a, b) => a.sortOrder - b.sortOrder).map((member) => (
           <article key={member.id} className="rounded-xl border border-navy/10 bg-white p-4">
             <div className="mb-3 flex items-center gap-3">
-              <div className="h-14 w-14 overflow-hidden rounded-full bg-cream">
-                {member.photoUrl ? <img src={member.photoUrl} alt={member.name} className="h-full w-full object-cover" /> : null}
+              <div className="aspect-[4/5] w-14 shrink-0 overflow-hidden rounded-md bg-cream">
+                {member.photoUrl ? <img src={member.photoUrl} alt={member.name} className="h-full w-full object-contain object-top" /> : null}
               </div>
               <div>
                 <h2 className="font-medium text-navy">{member.name}</h2>

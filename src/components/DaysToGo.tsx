@@ -1,7 +1,4 @@
-export default function DaysToGo({ date }: { date: string | number | Date }) {
-  const target = new Date(date).getTime();
-  if (!Number.isFinite(target)) return null;
-  const days = Math.ceil((target - Date.now()) / 86400000);
+export default function DaysToGo({ days }: { days: number }) {
   if (days < 0) return null;
 
   const urgent = days <= 7;
@@ -11,7 +8,7 @@ export default function DaysToGo({ date }: { date: string | number | Date }) {
     <div className="mb-6 flex justify-center">
       <span
         className={`rounded-full px-5 py-1.5 text-sm font-bold tracking-wide ${
-          urgent ? "animate-pulse bg-red-600 text-white" : "border border-gold/40 bg-gold/20 text-gold-dark"
+          urgent ? "animate-pulse bg-red-600 text-white" : "border border-white/50 bg-navy/75 text-white shadow-sm"
         }`}
       >
         {text}

@@ -459,7 +459,7 @@ const RealtimeTransactions = () => {
         <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-sky-500/20 blur-3xl" />
       </div>
       <div className="container relative z-10 mx-auto px-4">
-        <div className="relative overflow-hidden rounded-3xl border border-gold/20 bg-navy/75 p-6 shadow-2xl shadow-black/20 md:p-8">
+        <div className="relative min-w-0 overflow-hidden rounded-3xl border border-gold/20 bg-navy/75 p-4 shadow-2xl shadow-black/20 sm:p-6 md:p-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,197,89,0.18),transparent_40%)]" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
@@ -478,13 +478,13 @@ const RealtimeTransactions = () => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3 rounded-full border border-gold/20 bg-primary-foreground/5 px-4 py-2 text-sm text-primary-foreground/70">
-              <span className="relative flex h-2.5 w-2.5">
+            <div className="flex max-w-full items-center gap-3 rounded-2xl border border-gold/20 bg-primary-foreground/5 px-4 py-2 text-sm text-primary-foreground/70 sm:rounded-full">
+              <span className="relative flex h-2.5 w-2.5 shrink-0">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
               </span>
-              <span className="font-semibold text-gold">LIVE</span>
-              <span>{feedState.message}</span>
+              <span className="shrink-0 font-semibold text-gold">LIVE</span>
+              <span className="min-w-0 break-words">{feedState.message}</span>
             </div>
           </div>
 
@@ -499,7 +499,7 @@ const RealtimeTransactions = () => {
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Mission goal</p>
                   <div className="mt-3 flex items-end gap-2">
-                    <p className="text-4xl font-semibold text-primary-foreground">
+                    <p className="break-words text-2xl font-semibold text-primary-foreground min-[390px]:text-3xl sm:text-4xl">
                       <CountUpValue value={displayRaised} formatter={currencyFormatter} />
                     </p>
                     <span className="mb-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
@@ -555,7 +555,7 @@ const RealtimeTransactions = () => {
 
         <div className="mt-8 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <div className="glass-card rounded-3xl p-6">
+            <div className="glass-card min-w-0 rounded-3xl p-4 sm:p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Mission progress</p>
@@ -621,7 +621,7 @@ const RealtimeTransactions = () => {
               )}
             </div>
 
-            <div className="glass-card rounded-3xl p-6">
+            <div className="glass-card min-w-0 rounded-3xl p-4 sm:p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-xl font-semibold text-primary-foreground">Live donations</h3>
@@ -702,7 +702,7 @@ const RealtimeTransactions = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="glass-card rounded-3xl p-6">
+            <div className="glass-card min-w-0 rounded-3xl p-4 sm:p-6">
               <div className="flex items-center gap-3 text-gold">
                 <HeartHandshake className="h-5 w-5" />
                 <h3 className="text-xl font-semibold text-primary-foreground">Today’s pulse</h3>
@@ -739,7 +739,7 @@ const RealtimeTransactions = () => {
               </div>
             </div>
 
-            <div className="glass-card rounded-3xl p-6">
+            <div className="glass-card min-w-0 rounded-3xl p-4 sm:p-6">
               <div className="flex items-center gap-2 text-gold">
                 <Activity className="h-4 w-4" />
                 <h3 className="text-xl font-semibold text-primary-foreground">Live activity</h3>
@@ -766,31 +766,31 @@ const RealtimeTransactions = () => {
               </div>
             </div>
 
-            <div className="glass-card rounded-3xl p-6">
+            <div className="glass-card min-w-0 rounded-3xl p-4 sm:p-6">
               <div className="flex items-center gap-2 text-gold">
                 <Clock3 className="h-4 w-4" />
                 <h3 className="text-xl font-semibold text-primary-foreground">Supporters wall</h3>
               </div>
-              <div className="mt-5 overflow-x-auto pb-2">
+              <div className="mt-5">
                 {supporters.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-gold/20 bg-primary-foreground/5 px-3 py-4 text-sm text-primary-foreground/70">
                     The first supporters will appear here as gifts come in.
                   </div>
                 ) : (
-                  <div className="flex min-w-max gap-3">
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {supporters.map((supporter) => (
                       <div
                         key={supporter.id}
-                        className="glass-card w-36 shrink-0 rounded-2xl p-3 text-center text-sm text-primary-foreground/70"
+                        className="glass-card min-w-0 rounded-2xl p-3 text-center text-sm text-primary-foreground/70"
                       >
                         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-gold/20 bg-navy/70 text-sm font-semibold text-gold">
                           {getInitials(supporter.name)}
                         </div>
-                        <p className="mt-3 font-semibold text-primary-foreground">{supporter.name}</p>
+                        <p className="mt-3 break-words font-semibold text-primary-foreground">{supporter.name}</p>
                         <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-primary-foreground/50">
                           {supporter.count > 1 ? `${supporter.count} gifts` : "First gift"}
                         </p>
-                        <p className="mt-2 font-semibold text-gold">{currencyFormatter.format(supporter.amount)}</p>
+                        <p className="mt-2 break-words font-semibold text-gold">{currencyFormatter.format(supporter.amount)}</p>
                       </div>
                     ))}
                   </div>
@@ -820,11 +820,11 @@ const RealtimeTransactions = () => {
       <div className="fixed inset-x-4 bottom-4 z-50 md:hidden">
         <button
           onClick={handleCopyPaybill}
-          className="flex w-full items-center justify-between rounded-2xl border border-gold/30 bg-navy/95 px-4 py-3 text-left shadow-2xl shadow-black/30"
+          className="flex min-h-12 w-full items-center justify-between gap-3 rounded-2xl border border-gold/30 bg-navy/95 px-4 py-3 text-left shadow-2xl shadow-black/30"
         >
           <div>
             <p className="text-sm font-semibold text-primary-foreground">Donate now</p>
-            <p className="mt-1 text-xs uppercase tracking-[0.2em] text-primary-foreground/60">Paybill 247247 • Account 593021</p>
+            <p className="mt-1 break-words text-xs uppercase tracking-[0.12em] text-primary-foreground/60">Paybill 247247 • Account 593021</p>
           </div>
           <span className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-sm font-semibold text-gold">
             {copied ? "Copied" : "Copy"}

@@ -326,5 +326,5 @@ export function useCms() {
 
 export function usePublished<K extends CmsCollection>(key: K) {
   const { state } = useCms();
-  return [...state[key]].filter((item) => item.published).sort((a, b) => a.sortOrder - b.sortOrder);
+  return useMemo(() => [...state[key]].filter((item) => item.published).sort((a, b) => a.sortOrder - b.sortOrder), [state, key]);
 }

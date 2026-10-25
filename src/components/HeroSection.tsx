@@ -1,81 +1,70 @@
-import { useEffect, useState } from "react";
+import { useMemo } from "react";
 import { ChevronDown } from "lucide-react";
+import heroFallbackImage from "@/assets/hero-bg.webp";
 import CountdownTimer from "./CountdownTimer";
+import HeroSlideshow, { type HeroSlideImage } from "./HeroSlideshow";
 import Reveal from "./Reveal";
 import DaysToGo from "./DaysToGo";
 import { useInvolvement } from "./InvolvementDialogs";
+import { useCountdown } from "@/hooks/useCountdown";
 import { useCms, usePublished } from "@/cms/CmsProvider";
 
-const DEFAULT_HERO_IMAGE = "/uploads/site-heroimageurl.jpg";
+const GALLERY_FALLBACKS = ["/uploads/gallery-0-imageurl.jpg", "/uploads/gallery-1-imageurl.jpg"];
 
 const HeroSection = () => {
   const { open } = useInvolvement();
-  const { ready, state } = useCms();
+  const { state } = useCms();
   const posters = usePublished("posters");
+  const publishedSlides = usePublished("slides");
   const featured = posters.find((item) => item.featured) ?? posters[0];
   const { site } = state;
-  const [heroImageUrl, setHeroImageUrl] = useState(DEFAULT_HERO_IMAGE);
+  const countdown = useCountdown(site.countdownDate);
+  const slides = useMemo<HeroSlideImage[]>(() => {
+    const cmsSlides = publishedSlides
+      .filter((slide) => slide.placement === "hero")
+      .filter((slide) => slide.imageUrl.trim())
+      .map((slide) => ({
+        src: slide.imageUrl,
+        caption: slide.caption || undefined,
+        focal: slide.focal ?? "center",
+      }));
 
-  useEffect(() => {
-    const cmsImageUrl = site.heroImageUrl;
-    if (!ready || !cmsImageUrl || cmsImageUrl === DEFAULT_HERO_IMAGE) return;
+    if (cmsSlides.length >= 2) return cmsSlides;
 
-    let active = true;
-    const image = new Image();
-    image.onload = () => {
-      if (active) setHeroImageUrl(cmsImageUrl);
-    };
-    image.onerror = () => {
-      console.error("Could not load the configured hero image; keeping the default image.", cmsImageUrl);
-    };
-    image.src = cmsImageUrl;
-
-    return () => {
-      active = false;
-      image.onload = null;
-      image.onerror = null;
-    };
-  }, [ready, site.heroImageUrl]);
+    return [
+      { src: site.heroImageUrl || heroFallbackImage },
+      ...GALLERY_FALLBACKS.map((src) => ({ src })),
+    ];
+  }, [publishedSlides, site.heroImageUrl]);
 
   return (
-    <section id="home" className="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
-      <img
-        src={heroImageUrl}
-        alt=""
-        aria-hidden="true"
-        fetchPriority="high"
-        decoding="async"
-        width={1600}
-        height={900}
-        className="absolute inset-0 h-full w-full object-cover object-center"
-      />
-      <div className="absolute inset-0 bg-cream/15" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-cream/80" />
+    <section id="home" className="relative flex min-h-screen supports-[height:100svh]:min-h-[100svh] items-center justify-center overflow-hidden">
+      <HeroSlideshow images={slides} />
 
-      <div className="relative z-10 container mx-auto px-4 py-28 sm:py-32">
-        <div className="mx-auto max-w-4xl p-6 text-center sm:p-10 md:p-14">
+      <div className="container relative z-10 mx-auto px-4 pb-24 pt-24 sm:pb-24 sm:pt-32">
+        <div className="mx-auto max-w-4xl p-2 text-center sm:p-10 md:p-14">
           <Reveal direction="down" delay={0}>
-            <p className="mb-4 text-sm font-medium tracking-wide text-gold-dark">{site.heroEyebrow}</p>
+            <p className="mb-4 text-sm font-semibold tracking-wide text-gold">{site.heroEyebrow}</p>
           </Reveal>
           <Reveal direction="up" delay={120}>
-            <h1 className="mb-4 break-words font-display text-4xl font-bold leading-tight text-navy md:text-6xl lg:text-7xl">
+            <h1 className="mb-4 break-words font-display text-4xl font-bold leading-tight text-white md:text-6xl lg:text-7xl">
               {site.heroTitle}
             </h1>
           </Reveal>
           <Reveal direction="up" delay={240}>
-            <p className="mb-3 font-display text-lg italic text-navy/80 sm:text-xl md:text-2xl">{site.heroSubtitle}</p>
+            <p className="mb-3 font-display text-lg italic text-white/95 sm:text-xl md:text-2xl">{site.heroSubtitle}</p>
           </Reveal>
           <Reveal direction="up" delay={340}>
-            <p className="mb-10 text-sm font-medium text-navy/70 sm:text-base md:text-lg">{site.heroMeta}</p>
+            <p className="mb-10 text-sm font-medium text-white/90 sm:text-base md:text-lg">{site.heroMeta}</p>
           </Reveal>
 
-          <DaysToGo date={site.countdownDate} />
+          <DaysToGo days={countdown.expired ? -1 : countdown.days} />
           <Reveal direction="zoom" delay={460}>
-            <CountdownTimer targetDate={site.countdownDate} />
+            <CountdownTimer time={countdown} />
           </Reveal>
 
           <Reveal direction="up" delay={600}>
-            <div className="mt-10 flex w-full flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-8 flex w-full flex-col items-center justify-center gap-3 min-[480px]:flex-row">
               <button
                 onClick={() =>
                   open("give", {
@@ -83,13 +72,13 @@ const HeroSection = () => {
                     causeName: featured?.title || "the Mission",
                   })
                 }
-                className="hover-lift w-full rounded-lg bg-navy px-8 py-3 text-base font-semibold text-white hover:bg-navy-light sm:w-auto"
+                className="hover-lift min-h-11 w-full rounded-lg bg-gold px-8 py-3 text-base font-semibold text-navy hover:bg-gold/90 min-[480px]:w-auto"
               >
                 Support {featured?.title || "the Mission"}
               </button>
               <a
                 href="#involved"
-                className="hover-lift w-full rounded-lg border border-navy/20 bg-white/70 px-8 py-3 text-center text-base font-semibold text-navy hover:bg-white/80 sm:w-auto"
+                className="hover-lift min-h-11 w-full rounded-lg border border-white/30 bg-navy/60 px-8 py-3 text-center text-base font-semibold text-white hover:bg-navy/75 min-[480px]:w-auto"
               >
                 Get Involved
               </a>
@@ -98,7 +87,7 @@ const HeroSection = () => {
         </div>
       </div>
 
-      <a href="#about" aria-label="Scroll to about" className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce text-navy/50 transition-colors hover:text-navy">
+      <a href="#about" aria-label="Scroll to about" className="absolute bottom-8 left-1/2 z-10 hidden h-11 w-11 -translate-x-1/2 animate-bounce items-center justify-center text-white/80 transition-colors hover:text-white sm:flex">
         <ChevronDown size={28} />
       </a>
     </section>

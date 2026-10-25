@@ -1,4 +1,5 @@
 import { usePublished } from "@/cms/CmsProvider";
+import CmsImage from "@/components/CmsImage";
 
 const MotivationMarquee = () => {
   const slides = usePublished("slides");
@@ -13,7 +14,7 @@ const MotivationMarquee = () => {
           <div key={copy} className="flex shrink-0 gap-4 pr-4" aria-hidden={copy === 1}>
             {slides.map((slide) => (
               <article key={`${slide.id}-${copy}`} className="relative h-56 w-[min(88vw,28rem)] shrink-0 overflow-hidden rounded-xl border border-navy/10 bg-navy sm:h-64 md:h-80">
-                <img src={slide.imageUrl} alt={slide.title} loading="lazy" className="h-full w-full object-cover" />
+                <CmsImage src={slide.imageUrl} alt={slide.title} width={448} height={320} className="h-full w-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/20 to-transparent" />
                 <blockquote className="absolute inset-x-0 bottom-0 p-4 sm:p-6">
                   <p className="font-display max-w-md text-base italic leading-snug text-white md:text-xl">“{slide.caption}”</p>

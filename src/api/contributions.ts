@@ -3,7 +3,6 @@ import { apiGet } from "./client";
 export interface ContributionDTO {
   id: number;
   donor_name: string;
-  donor_phone: string;
   amount: number;
   status: string;
   created_at: string;

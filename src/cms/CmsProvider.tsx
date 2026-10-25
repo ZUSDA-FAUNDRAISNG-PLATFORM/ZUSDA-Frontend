@@ -98,7 +98,12 @@ function describe(err: unknown) {
 
 const repairRemote = (remote: any, seed: any) => {
   const out = { ...remote };
-  const stem = (u: string) => u.replace(/^.*\//, "").replace(/-[A-Za-z0-9_-]{6,10}(\.[a-z]+)$/i, "$1");
+  const stem = (u: string) =>
+    u
+      .replace(/^.*\//, "")
+      .replace(/\.[^.]+$/, "")
+      .replace(/-(?=[A-Za-z0-9_-]{6,10}$)(?=[A-Za-z0-9_-]*[A-Z0-9_-])[A-Za-z0-9_-]{6,10}$/, "")
+      .toLowerCase();
   const seedUrls: Record<string, string> = {};
   const collect = (v: any) => {
     if (Array.isArray(v)) v.forEach(collect);

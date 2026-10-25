@@ -7,12 +7,6 @@ export interface PrayerSignupPayload {
   message?: string | null;
 }
 
-export interface DonationPayload {
-  fullName?: string | null;
-  phone: string;
-  amount: number;
-  status?: string;
-}
 export interface MpesaDonationPayload {
   donor_name: string;
   phone: string;
@@ -33,9 +27,6 @@ export function submitPrayerSignup(payload: PrayerSignupPayload) {
   return apiPost(`/prayer-signups/`, payload);
 }
 
-export function submitDonation(payload: DonationPayload) {
-  return apiPost(`/contributions/`, payload);
-}
 export function submitMpesaDonation(payload: MpesaDonationPayload) {
   return apiPost(`/mpesa/stk-push`, payload);
 }

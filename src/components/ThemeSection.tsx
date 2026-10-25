@@ -3,6 +3,7 @@ import Reveal from "@/components/Reveal";
 import ShareButton from "@/components/ShareButton";
 import { usePublished } from "@/cms/CmsProvider";
 import { useInvolvement } from "@/components/InvolvementDialogs";
+import CmsImage from "@/components/CmsImage";
 
 const ThemeSection = () => {
   const posters = usePublished("posters");
@@ -38,9 +39,11 @@ const ThemeSection = () => {
             <Reveal key={poster.id} direction="zoom" delay={i * 140}>
               <article className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow group overflow-hidden rounded-2xl">
                 <div className="flex max-h-[28rem] items-center justify-center overflow-hidden p-3">
-                  <img loading="lazy" decoding="async"
+                  <CmsImage
                     src={poster.imageUrl}
                     alt={poster.title}
+                    width={800}
+                    height={1000}
                     className="max-h-[26rem] w-auto max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
                   />
                 </div>

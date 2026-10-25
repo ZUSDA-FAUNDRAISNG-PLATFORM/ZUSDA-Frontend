@@ -21,7 +21,7 @@ const Footer = () => {
             <div className="h-full p-6">
               <div className="mb-4 flex items-center gap-4">
                 <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-gold bg-white">
-                  <img src={sdaLogo} alt="SDA logo" loading="lazy" className="h-full w-full object-cover" />
+                  <img src={sdaLogo} alt="SDA logo" loading="lazy" decoding="async" width={64} height={64} className="h-full w-full object-cover" />
                 </div>
                 <div>
                   <p className="font-display text-2xl font-bold text-primary-foreground">

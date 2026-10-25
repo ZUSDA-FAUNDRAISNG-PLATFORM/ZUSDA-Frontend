@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import CmsImage from "@/components/CmsImage";
 
 type Item = { imageUrl: string; caption?: string };
 type Props = { items: Item[]; index: number | null; onClose: () => void; onChange: (i: number) => void };
@@ -66,9 +67,11 @@ export default function Lightbox({ items, index, onClose, onChange }: Props) {
       >
         <ChevronLeft size={26} />
       </button>
-      <img
+      <CmsImage
         src={item.imageUrl}
         alt={item.caption || "Gallery photo"}
+        width={1200}
+        height={800}
         onClick={(e) => e.stopPropagation()}
         className="max-h-[80vh] max-w-full rounded-lg object-contain shadow-2xl"
       />

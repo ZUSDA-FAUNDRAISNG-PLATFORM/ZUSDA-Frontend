@@ -1,6 +1,6 @@
 import helpingHands from "@/assets/helping-hands.jpg";
 import worshipSunrise from "@/assets/worship-sunrise.jpg";
-import heroBg from "@/assets/hero-bg.jpg";
+import heroBg from "@/assets/hero-bg.webp";
 
 /**
  * Motivation slides for the About marquee.

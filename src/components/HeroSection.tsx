@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import CountdownTimer from "./CountdownTimer";
 import Reveal from "./Reveal";
@@ -5,16 +6,49 @@ import DaysToGo from "./DaysToGo";
 import { useInvolvement } from "./InvolvementDialogs";
 import { useCms, usePublished } from "@/cms/CmsProvider";
 
+const DEFAULT_HERO_IMAGE = "/uploads/site-heroimageurl.jpg";
+
 const HeroSection = () => {
   const { open } = useInvolvement();
-  const { state } = useCms();
+  const { ready, state } = useCms();
   const posters = usePublished("posters");
   const featured = posters.find((item) => item.featured) ?? posters[0];
   const { site } = state;
+  const [heroImageUrl, setHeroImageUrl] = useState(DEFAULT_HERO_IMAGE);
+
+  useEffect(() => {
+    const cmsImageUrl = site.heroImageUrl;
+    if (!ready || !cmsImageUrl || cmsImageUrl === DEFAULT_HERO_IMAGE) return;
+
+    let active = true;
+    const image = new Image();
+    image.onload = () => {
+      if (active) setHeroImageUrl(cmsImageUrl);
+    };
+    image.onerror = () => {
+      console.error("Could not load the configured hero image; keeping the default image.", cmsImageUrl);
+    };
+    image.src = cmsImageUrl;
+
+    return () => {
+      active = false;
+      image.onload = null;
+      image.onerror = null;
+    };
+  }, [ready, site.heroImageUrl]);
 
   return (
     <section id="home" className="relative flex min-h-[100svh] items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${site.heroImageUrl})` }} />
+      <img
+        src={heroImageUrl}
+        alt=""
+        aria-hidden="true"
+        fetchPriority="high"
+        decoding="async"
+        width={1600}
+        height={900}
+        className="absolute inset-0 h-full w-full object-cover object-center"
+      />
       <div className="absolute inset-0 bg-cream/15" />
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-cream/80" />
 

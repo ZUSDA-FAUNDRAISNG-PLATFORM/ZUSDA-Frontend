@@ -6,7 +6,6 @@ import {
   BadgeCheck,
   Clock3,
   Coins,
-  Eye,
   HeartHandshake,
   Sparkles,
   TrendingUp,
@@ -15,6 +14,9 @@ import {
 } from "lucide-react";
 import { getRecentContributions, type ContributionDTO } from "@/api/contributions";
 import { ApiError } from "@/api/client";
+import { useCms } from "@/cms/CmsProvider";
+import LiquidBar from "@/components/LiquidBar";
+import { progressHue } from "@/lib/progress";
 
 type FeedStatus = "loading" | "ready" | "error";
 
@@ -47,19 +49,7 @@ const currencyFormatter = new Intl.NumberFormat("en-KE", {
   maximumFractionDigits: 0,
 });
 
-const GOAL_AMOUNT = 50000;
-
-const getTimeLeft = () => {
-  const target = new Date(Date.now() + 18 * 24 * 60 * 60 * 1000 + 4 * 60 * 60 * 1000 + 21 * 60 * 1000);
-  const diffMs = target.getTime() - Date.now();
-  const safeDiff = Math.max(0, diffMs);
-
-  return {
-    days: Math.floor(safeDiff / (1000 * 60 * 60 * 24)),
-    hours: Math.floor((safeDiff / (1000 * 60 * 60)) % 24),
-    minutes: Math.floor((safeDiff / (1000 * 60)) % 60),
-  };
-};
+const DEFAULT_GOAL_AMOUNT = 416000;
 
 const formatTime = (timestamp: string | null | undefined) => {
   if (!timestamp) {
@@ -100,20 +90,8 @@ const formatTime = (timestamp: string | null | undefined) => {
 };
 
 const getInitials = (name?: string | null) => {
-  if (!name) {
-    return "AN";
-  }
-
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) {
-    return "AN";
-  }
-
-  if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
-  }
-
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  const clean = (name ?? "").replace(/\*/g, "").trim();
+  return clean ? clean[0].toUpperCase() : "A";
 };
 
 const getStatusTone = (status: string) => {
@@ -186,10 +164,12 @@ const CountUpValue = ({ value, formatter, duration = 900, className }: CountUpVa
   return <span className={className}>{formatter ? formatter.format(displayValue) : displayValue.toLocaleString()}</span>;
 };
 
-const POLL_INTERVAL_MS = 4000;
+const POLL_INTERVAL_MS = 30000;
 const MAX_RETRY_ATTEMPTS = 4;
 
 const RealtimeTransactions = () => {
+  const { state } = useCms();
+  const goalAmount = Number(state.site.budgetGoal) > 0 ? Number(state.site.budgetGoal) : DEFAULT_GOAL_AMOUNT;
   const [feedState, setFeedState] = useState<FeedState>({
     transactions: [],
     status: "loading",
@@ -198,11 +178,9 @@ const RealtimeTransactions = () => {
     retryCount: 0,
   });
   const [displayRaised, setDisplayRaised] = useState(0);
-  const [visitorCount, setVisitorCount] = useState(18);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [activityFeed, setActivityFeed] = useState<ActivityItem[]>([]);
   const [celebration, setCelebration] = useState<string | null>(null);
-  const [countdown, setCountdown] = useState(getTimeLeft);
   const [copied, setCopied] = useState(false);
   const knownIdsRef = useRef<Set<number>>(new Set());
   const newArrivalIdsRef = useRef<Set<number>>(new Set());
@@ -210,7 +188,6 @@ const RealtimeTransactions = () => {
 
   useEffect(() => {
     let isMounted = true;
-    let pollTimer: number | undefined;
     let retryTimer: number | undefined;
 
     const loadTransactions = async (attempt = 0) => {
@@ -229,8 +206,8 @@ const RealtimeTransactions = () => {
         const newlyArrivedIds = sortedData.filter((item) => !knownIdsRef.current.has(item.id)).map((item) => item.id);
         const newTransactions = sortedData.filter((item) => newlyArrivedIds.includes(item.id));
         const nextRaised = sortedData.reduce((sum, transaction) => sum + Number(transaction.amount), 0);
-        const nextProgress = Math.min(100, Math.round((nextRaised / GOAL_AMOUNT) * 100));
-        const lastMilestone = previousRaisedRef.current === 0 ? 0 : Math.round((previousRaisedRef.current / GOAL_AMOUNT) * 100);
+        const nextProgress = Math.min(100, Math.round((nextRaised / goalAmount) * 100));
+        const lastMilestone = previousRaisedRef.current === 0 ? 0 : Math.round((previousRaisedRef.current / goalAmount) * 100);
 
         knownIdsRef.current = seenIds;
         newArrivalIdsRef.current = new Set(newlyArrivedIds);
@@ -248,8 +225,6 @@ const RealtimeTransactions = () => {
             })),
             ...current,
           ].slice(0, 3));
-
-          setVisitorCount((current) => current + newTransactions.length);
 
           nextActivityItems.push(
             ...newTransactions.slice(0, 2).map((transaction) => ({
@@ -292,7 +267,7 @@ const RealtimeTransactions = () => {
           status: "ready",
           lastSyncedAt: new Date().toISOString(),
           retryCount: 0,
-          message: newlyArrivedIds.length > 0 ? `A new transaction just arrived${newlyArrivedIds.length > 1 ? "s" : ""}.` : "Live updates are active. Refreshing every 4 seconds.",
+          message: newlyArrivedIds.length > 0 ? `A new transaction just arrived${newlyArrivedIds.length > 1 ? "s" : ""}.` : "Live updates are active. Refreshing every 30 seconds.",
         }));
       } catch (error) {
         if (!isMounted) {
@@ -320,7 +295,7 @@ const RealtimeTransactions = () => {
 
     void loadTransactions();
 
-    pollTimer = window.setInterval(() => {
+    const pollTimer = window.setInterval(() => {
       if (!isMounted) {
         return;
       }
@@ -329,24 +304,12 @@ const RealtimeTransactions = () => {
 
     return () => {
       isMounted = false;
-      if (pollTimer !== undefined) {
-        window.clearInterval(pollTimer);
-      }
+      window.clearInterval(pollTimer);
       if (retryTimer !== undefined) {
         window.clearTimeout(retryTimer);
       }
     };
-  }, []);
-
-  useEffect(() => {
-    const interval = window.setInterval(() => {
-      setCountdown(getTimeLeft());
-    }, 1000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, []);
+  }, [goalAmount]);
 
   useEffect(() => {
     const nextRaised = feedState.transactions.reduce((sum, transaction) => sum + Number(transaction.amount), 0);
@@ -411,13 +374,12 @@ const RealtimeTransactions = () => {
     const current = Number(transaction.amount);
     return current > largest ? current : largest;
   }, 0);
-  const progressPercent = Math.min(100, Math.round((totalRaised / GOAL_AMOUNT) * 100));
+  const progressPercent = Math.max(0, Math.min(100, Math.round((totalRaised / goalAmount) * 100)));
   const supporters = useMemo(() => {
-    const grouped = new Map<string, { name: string; count: number; amount: number }>();
+    const grouped = new Map<number, { id: number; name: string; count: number; amount: number }>();
 
     sortedTransactions.forEach((transaction) => {
-      const donorName = transaction.donor_name?.trim() || "Anonymous donor";
-      const existing = grouped.get(donorName);
+      const existing = grouped.get(transaction.id);
 
       if (existing) {
         existing.count += 1;
@@ -425,8 +387,9 @@ const RealtimeTransactions = () => {
         return;
       }
 
-      grouped.set(donorName, {
-        name: donorName,
+      grouped.set(transaction.id, {
+        id: transaction.id,
+        name: transaction.donor_name?.trim() || "Anonymous donor",
         count: 1,
         amount: Number(transaction.amount),
       });
@@ -469,7 +432,7 @@ const RealtimeTransactions = () => {
     ];
   }, [displayRaised, feedState.lastSyncedAt, feedState.retryCount, feedState.status, latestGift, totalDonationsToday, totalRaised]);
 
-  const remainingGoal = Math.max(GOAL_AMOUNT - totalRaised, 0);
+  const remainingGoal = Math.max(goalAmount - totalRaised, 0);
 
   const handleCopyPaybill = async () => {
     try {
@@ -489,9 +452,14 @@ const RealtimeTransactions = () => {
   }));
 
   return (
-    <section className="bg-primary-foreground/5 py-20">
-      <div className="container mx-auto px-4">
-        <div className="relative overflow-hidden rounded-3xl border border-gold/20 bg-navy p-6 shadow-2xl shadow-black/20 md:p-8">
+    <section className="relative isolate overflow-hidden bg-primary-foreground/5 py-20">
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
+        <div className="absolute right-0 top-1/3 h-96 w-96 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-sky-500/20 blur-3xl" />
+      </div>
+      <div className="container relative z-10 mx-auto px-4">
+        <div className="relative overflow-hidden rounded-3xl border border-gold/20 bg-navy/75 p-6 shadow-2xl shadow-black/20 md:p-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,197,89,0.18),transparent_40%)]" />
           <div className="relative flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
             <div className="max-w-2xl">
@@ -525,7 +493,7 @@ const RealtimeTransactions = () => {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25 }}
-              className="rounded-3xl border border-gold/30 bg-gradient-to-br from-gold/20 via-navy/80 to-primary-foreground/5 p-6 shadow-2xl shadow-black/20"
+              className="glass-card rounded-3xl p-6"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -535,12 +503,12 @@ const RealtimeTransactions = () => {
                       <CountUpValue value={displayRaised} formatter={currencyFormatter} />
                     </p>
                     <span className="mb-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-300">
-                      +{currencyFormatter.format(Math.max(totalRaised - 10000, 0))} today
+                      +{currencyFormatter.format(totalRaised)} today
                     </span>
                   </div>
-                  <p className="mt-3 text-sm text-primary-foreground/70">{Math.round((displayRaised / GOAL_AMOUNT) * 100)}% complete</p>
+                  <p className="mt-3 text-sm text-primary-foreground/70">{Math.min(100, Math.round((displayRaised / goalAmount) * 100))}% complete</p>
                 </div>
-                <div className="rounded-2xl border border-gold/20 bg-primary-foreground/5 px-4 py-3 text-right">
+                <div className="glass-card rounded-2xl px-4 py-3 text-right">
                   <p className="text-[11px] uppercase tracking-[0.2em] text-primary-foreground/50">Remaining</p>
                   <p className="mt-1 text-xl font-semibold text-gold">{currencyFormatter.format(remainingGoal)}</p>
                 </div>
@@ -554,7 +522,7 @@ const RealtimeTransactions = () => {
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.25 }}
-                  className="rounded-2xl border border-gold/20 bg-navy/80 p-4 shadow-lg shadow-black/10"
+                  className="glass-card rounded-2xl p-4"
                 >
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">{card.label}</p>
                   <p className="mt-3 text-xl font-semibold text-primary-foreground">{card.value}</p>
@@ -587,7 +555,7 @@ const RealtimeTransactions = () => {
 
         <div className="mt-8 grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
           <div className="space-y-4">
-            <div className="rounded-3xl border border-gold/20 bg-navy/85 p-6 shadow-lg shadow-black/10">
+            <div className="glass-card rounded-3xl p-6">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold uppercase tracking-[0.2em] text-gold">Mission progress</p>
@@ -598,32 +566,31 @@ const RealtimeTransactions = () => {
                 </div>
               </div>
 
-              <div className="mt-6 rounded-2xl border border-gold/10 bg-primary-foreground/5 p-4">
+              <div className="glass-card mt-6 rounded-2xl p-4">
                 <div className="flex items-center justify-between text-sm text-primary-foreground/60">
                   <span>Raised</span>
-                  <span>{currencyFormatter.format(displayRaised)} of {currencyFormatter.format(GOAL_AMOUNT)}</span>
+                  <span>{currencyFormatter.format(displayRaised)} of {currencyFormatter.format(goalAmount)}</span>
                 </div>
-                <div className="mt-3 h-4 overflow-hidden rounded-full bg-primary-foreground/10">
-                  <motion.div
-                    initial={{ width: 0 }}
-                    animate={{ width: `${progressPercent}%` }}
-                    transition={{ duration: 0.6 }}
-                    className="h-full rounded-full bg-gradient-to-r from-gold via-gold-light to-emerald-400"
-                  />
+                <div className="mt-3">
+                  <LiquidBar percent={progressPercent} />
                 </div>
                 <div className="mt-4 flex items-center justify-between text-xs uppercase tracking-[0.25em] text-primary-foreground/50">
                   {[0, 25, 50, 75, 100].map((step) => (
-                    <span key={step} className={step <= progressPercent ? "text-gold" : ""}>
+                    <span
+                      key={step}
+                      className={step <= progressPercent ? "text-gold" : ""}
+                      style={step <= progressPercent ? { color: `hsl(${progressHue(step)} 80% 60%)` } : undefined}
+                    >
                       {step}%
                     </span>
                   ))}
                 </div>
                 <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
-                  <div className="rounded-2xl border border-gold/10 bg-navy/60 p-3">
+                  <div className="glass-card rounded-2xl p-3">
                     <p className="text-[11px] uppercase tracking-[0.2em] text-primary-foreground/50">Raised</p>
                     <p className="mt-1 font-semibold text-primary-foreground">{currencyFormatter.format(displayRaised)}</p>
                   </div>
-                  <div className="rounded-2xl border border-gold/10 bg-navy/60 p-3">
+                  <div className="glass-card rounded-2xl p-3">
                     <p className="text-[11px] uppercase tracking-[0.2em] text-primary-foreground/50">Remaining</p>
                     <p className="mt-1 font-semibold text-gold">{currencyFormatter.format(remainingGoal)}</p>
                   </div>
@@ -654,7 +621,7 @@ const RealtimeTransactions = () => {
               )}
             </div>
 
-            <div className="rounded-3xl border border-gold/20 bg-navy/85 p-6 shadow-lg shadow-black/10">
+            <div className="glass-card rounded-3xl p-6">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <h3 className="text-xl font-semibold text-primary-foreground">Live donations</h3>
@@ -735,34 +702,34 @@ const RealtimeTransactions = () => {
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-3xl border border-gold/20 bg-gradient-to-br from-gold/15 to-primary-foreground/5 p-6 shadow-lg shadow-black/10">
+            <div className="glass-card rounded-3xl p-6">
               <div className="flex items-center gap-3 text-gold">
                 <HeartHandshake className="h-5 w-5" />
                 <h3 className="text-xl font-semibold text-primary-foreground">Today’s pulse</h3>
               </div>
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-gold/10 bg-primary-foreground/5 p-4">
+                <div className="glass-card rounded-2xl p-4">
                   <div className="flex items-center gap-2 text-gold">
                     <Coins className="h-4 w-4" />
                     <p className="text-sm font-semibold uppercase tracking-[0.2em]">Raised today</p>
                   </div>
                   <p className="mt-3 text-2xl font-semibold text-primary-foreground">{currencyFormatter.format(totalRaised)}</p>
                 </div>
-                <div className="rounded-2xl border border-gold/10 bg-primary-foreground/5 p-4">
+                <div className="glass-card rounded-2xl p-4">
                   <div className="flex items-center gap-2 text-gold">
                     <Users className="h-4 w-4" />
                     <p className="text-sm font-semibold uppercase tracking-[0.2em]">Donations</p>
                   </div>
                   <p className="mt-3 text-2xl font-semibold text-primary-foreground">{totalDonationsToday}</p>
                 </div>
-                <div className="rounded-2xl border border-gold/10 bg-primary-foreground/5 p-4">
+                <div className="glass-card rounded-2xl p-4">
                   <div className="flex items-center gap-2 text-gold">
                     <TrendingUp className="h-4 w-4" />
                     <p className="text-sm font-semibold uppercase tracking-[0.2em]">Average</p>
                   </div>
                   <p className="mt-3 text-2xl font-semibold text-primary-foreground">{currencyFormatter.format(averageDonation)}</p>
                 </div>
-                <div className="rounded-2xl border border-gold/10 bg-primary-foreground/5 p-4">
+                <div className="glass-card rounded-2xl p-4">
                   <div className="flex items-center gap-2 text-gold">
                     <BadgeCheck className="h-4 w-4" />
                     <p className="text-sm font-semibold uppercase tracking-[0.2em]">Largest</p>
@@ -772,55 +739,7 @@ const RealtimeTransactions = () => {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gold/20 bg-navy/85 p-6 shadow-lg shadow-black/10">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-xl font-semibold text-primary-foreground">Live visitors</h3>
-                  <p className="mt-1 text-sm text-primary-foreground/60">The page feels active while donors arrive.</p>
-                </div>
-                <div className="flex items-center gap-2 rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-sm text-gold">
-                  <Eye className="h-4 w-4" />
-                  {visitorCount}
-                </div>
-              </div>
-              <div className="mt-5 rounded-2xl border border-gold/10 bg-primary-foreground/5 p-4">
-                <div className="flex items-end justify-between gap-3">
-                  <div>
-                    <p className="text-sm text-primary-foreground/60">Watching now</p>
-                    <p className="mt-2 text-3xl font-semibold text-primary-foreground">{visitorCount}</p>
-                  </div>
-                  <div className="text-right text-sm text-primary-foreground/60">
-                    <p>+{sortedTransactions.length} new</p>
-                    <p className="mt-1 text-gold">Momentum is building</p>
-                  </div>
-                </div>
-                <div className="mt-4 flex items-center gap-2 text-sm text-primary-foreground/70">
-                  <span className="rounded-full bg-emerald-400/10 px-2 py-1 text-emerald-300">{Math.max(totalDonationsToday, 1)} gifts today</span>
-                  <span className="rounded-full bg-gold/10 px-2 py-1 text-gold">⏱ avg every {Math.max(6, 12 - totalDonationsToday)} mins</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-gold/20 bg-navy/85 p-6 shadow-lg shadow-black/10">
-              <div className="flex items-center gap-2 text-gold">
-                <Clock3 className="h-4 w-4" />
-                <h3 className="text-xl font-semibold text-primary-foreground">Mission ends</h3>
-              </div>
-              <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-                {[
-                  { label: "Days", value: countdown.days },
-                  { label: "Hours", value: countdown.hours },
-                  { label: "Mins", value: countdown.minutes },
-                ].map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-gold/10 bg-primary-foreground/5 p-3">
-                    <p className="text-xl font-semibold text-primary-foreground">{item.value}</p>
-                    <p className="mt-1 text-[10px] uppercase tracking-[0.2em] text-primary-foreground/50">{item.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-3xl border border-gold/20 bg-navy/85 p-6 shadow-lg shadow-black/10">
+            <div className="glass-card rounded-3xl p-6">
               <div className="flex items-center gap-2 text-gold">
                 <Activity className="h-4 w-4" />
                 <h3 className="text-xl font-semibold text-primary-foreground">Live activity</h3>
@@ -832,7 +751,7 @@ const RealtimeTransactions = () => {
                   </div>
                 ) : (
                   activityFeed.map((item) => (
-                    <div key={item.id} className="rounded-2xl border border-gold/10 bg-primary-foreground/5 px-3 py-3">
+                    <div key={item.id} className="glass-card rounded-2xl px-3 py-3">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold text-primary-foreground">{item.title}</p>
                         <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] ${item.tone === "gold" ? "border-gold/30 bg-gold/10 text-gold" : item.tone === "sky" ? "border-sky-400/30 bg-sky-400/10 text-sky-200" : "border-emerald-400/30 bg-emerald-400/10 text-emerald-300"}`}>
@@ -847,7 +766,7 @@ const RealtimeTransactions = () => {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gold/20 bg-navy/85 p-6 shadow-lg shadow-black/10">
+            <div className="glass-card rounded-3xl p-6">
               <div className="flex items-center gap-2 text-gold">
                 <Clock3 className="h-4 w-4" />
                 <h3 className="text-xl font-semibold text-primary-foreground">Supporters wall</h3>
@@ -859,10 +778,10 @@ const RealtimeTransactions = () => {
                   </div>
                 ) : (
                   <div className="flex min-w-max gap-3">
-                    {supporters.map((supporter, index) => (
+                    {supporters.map((supporter) => (
                       <div
-                        key={`${supporter.name}-${index}`}
-                        className="w-36 shrink-0 rounded-2xl border border-gold/10 bg-primary-foreground/5 p-3 text-center text-sm text-primary-foreground/70 transition-all hover:border-gold/30 hover:bg-gold/10"
+                        key={supporter.id}
+                        className="glass-card w-36 shrink-0 rounded-2xl p-3 text-center text-sm text-primary-foreground/70"
                       >
                         <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-gold/20 bg-navy/70 text-sm font-semibold text-gold">
                           {getInitials(supporter.name)}
@@ -879,7 +798,7 @@ const RealtimeTransactions = () => {
               </div>
             </div>
 
-            <div className="rounded-3xl border border-gold/20 bg-navy/85 p-6 shadow-lg shadow-black/10">
+            <div className="glass-card rounded-3xl p-6">
               <div className="flex items-center gap-2 text-gold">
                 <TrendingUp className="h-4 w-4" />
                 <h3 className="text-xl font-semibold text-primary-foreground">Trend</h3>

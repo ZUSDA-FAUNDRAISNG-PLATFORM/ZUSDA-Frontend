@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Reveal from "@/components/Reveal";
 import Lightbox from "@/components/Lightbox";
+import CmsImage from "@/components/CmsImage";
 import { usePublished } from "@/cms/CmsProvider";
 
 export const AnnouncementsSection = () => {
@@ -43,9 +44,11 @@ export const EventsSection = () => {
               <article className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow group h-full overflow-hidden rounded-2xl">
                 {item.imageUrl ? (
                   <div className="overflow-hidden">
-                    <img loading="lazy" decoding="async"
+                    <CmsImage
                       src={item.imageUrl}
                       alt={item.title}
+                      width={1200}
+                      height={600}
                       className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
                   </div>
@@ -83,11 +86,11 @@ export const GallerySection = () => {
                 aria-label={`Open photo${item.caption ? `: ${item.caption}` : ""}`}
                 className="hover-lift group relative block w-full overflow-hidden rounded-2xl bg-cream"
               >
-                <img
-                  loading="lazy"
-                  decoding="async"
+                <CmsImage
                   src={item.imageUrl}
                   alt={item.caption}
+                  width={600}
+                  height={600}
                   className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 {item.caption ? (

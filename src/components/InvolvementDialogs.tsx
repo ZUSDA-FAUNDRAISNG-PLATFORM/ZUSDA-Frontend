@@ -89,8 +89,6 @@ const PrayDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
     } finally {
       setLoading(false);
     }
-    setForm({ full_name: "", email: "", phone: "", message: "" });
-    onClose();
   };
 
   return (

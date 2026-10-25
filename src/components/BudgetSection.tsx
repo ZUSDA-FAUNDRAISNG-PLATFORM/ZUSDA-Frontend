@@ -16,8 +16,10 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import ShareButton from "@/components/ShareButton";
+import LiquidBar from "@/components/LiquidBar";
 import { useInvolvement } from "./InvolvementDialogs";
 import { useEventCollections } from "@/hooks/useEventCollections";
+import { progressHue } from "@/lib/progress";
 import { useCms, usePublished } from "@/cms/CmsProvider";
 import { useLiveViewers } from "@/hooks/useLiveViewers";
 import { apiGet } from "@/api/client";
@@ -203,6 +205,11 @@ const BudgetSection = () => {
 
   return (
     <section id="budget" className="relative scroll-mt-28 overflow-hidden bg-navy py-16 sm:py-20">
+      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
+        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
+        <div className="absolute right-0 top-1/3 h-96 w-96 rounded-full bg-emerald-500/20 blur-3xl" />
+        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-sky-500/20 blur-3xl" />
+      </div>
       <div className="container relative z-10 mx-auto px-4" ref={ref}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -246,7 +253,7 @@ const BudgetSection = () => {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={inView ? { opacity: 1, scale: 1 } : {}}
               transition={{ delay: 0.1 }}
-              className="rounded-xl border border-white/10 bg-white/5 p-6"
+              className="glass-card rounded-xl p-6"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
@@ -256,13 +263,8 @@ const BudgetSection = () => {
                 <div className="rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-gold">Live</div>
               </div>
 
-              <div className="relative mt-6 h-3 w-full overflow-hidden rounded-full bg-white/10">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progressPercent}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className="h-full rounded-full bg-gold"
-                />
+              <div className="mt-6">
+                <LiquidBar percent={progressPercent} />
               </div>
 
               <div className="mt-4 flex items-center justify-between text-sm text-primary-foreground/70">
@@ -275,6 +277,7 @@ const BudgetSection = () => {
                   <span
                     key={step}
                     className={`rounded-md px-3 py-1 text-[11px] font-medium ${progressPercent >= step ? "border border-gold/30 bg-gold/10 text-gold" : "border border-white/10 text-white/50"}`}
+                    style={progressPercent >= step ? { color: `hsl(${progressHue(step)} 80% 60%)` } : undefined}
                   >
                     {step}%
                   </span>
@@ -282,7 +285,7 @@ const BudgetSection = () => {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl border border-white/10 bg-navy/30 p-4">
+                <div className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gold">
                     <HandCoins size={16} />
                     <span className="text-[11px] font-medium">Raised</span>
@@ -291,7 +294,7 @@ const BudgetSection = () => {
                     <CountUpValue value={raised} prefix="KSH " />
                   </p>
                 </div>
-                <div className="rounded-xl border border-gold/15 bg-navy/30 p-4">
+                <div className="glass-card rounded-xl p-4">
                   <div className="flex items-center gap-2 text-gold">
                     <Target size={16} />
                     <span className="text-[11px] font-medium">Goal</span>
@@ -306,7 +309,7 @@ const BudgetSection = () => {
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: 0.15 }}
-                className="rounded-xl border border-white/10 bg-white/5 p-6 text-left"
+                className="glass-card rounded-xl p-6 text-left"
               >
                 <p className="mb-4 text-xs font-medium text-gold">Payment Details</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
@@ -348,7 +351,7 @@ const BudgetSection = () => {
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: 0.2 }}
-                className="rounded-xl border border-white/10 bg-white/5 p-6"
+                className="glass-card rounded-xl p-6"
               >
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-medium text-gold">Next Milestone</p>
@@ -374,7 +377,7 @@ const BudgetSection = () => {
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-4 text-left">
+            <div className="glass-card rounded-xl p-4 text-left">
               <div className="mb-4 flex items-center justify-between">
                 <p className="text-xs font-medium text-gold">Recent Contributions</p>
                 <span className="rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-gold">Live</span>
@@ -389,7 +392,7 @@ const BudgetSection = () => {
                         initial={{ opacity: 0, scale: 0.85, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9 }}
-                        className={`rounded-xl border py-4 pl-5 pr-4 ${index === 0 ? "border-gold/30 bg-gold/5" : "border-white/10 bg-navy/30"}`}
+                        className={`glass-card rounded-xl py-4 pl-5 pr-4 ${index === 0 ? "border-gold/30 bg-gold/5" : ""}`}
                       >
                         <div className="flex items-center justify-between gap-3">
                           <p className="font-mono text-sm text-gold">{item.hash}</p>
@@ -410,7 +413,7 @@ const BudgetSection = () => {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                className="rounded-xl border border-white/10 bg-white/5 p-6"
+                className="glass-card rounded-xl p-6"
               >
                 <div className="flex items-center gap-2 text-gold">
                   <HeartHandshake size={16} />
@@ -422,7 +425,7 @@ const BudgetSection = () => {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                className="rounded-xl border border-white/10 bg-white/5 p-6"
+                className="glass-card rounded-xl p-6"
               >
                 <div className="flex items-center justify-between">
                   <div>

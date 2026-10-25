@@ -64,6 +64,7 @@ const App = () => (
                   <Route index element={<Overview />} />
                   <Route path="posters" element={<PostersPage />} />
                   <Route path="slider" element={<SliderPage />} />
+                  <Route path="scripture-cards" element={<SliderPage placement="scripture" />} />
                   <Route path="values" element={<ValuesPage />} />
                   <Route path="committee" element={<CommitteePage />} />
                   <Route path="announcements" element={<AnnouncementsPage />} />

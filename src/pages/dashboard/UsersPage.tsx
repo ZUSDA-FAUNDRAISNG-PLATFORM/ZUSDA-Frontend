@@ -154,8 +154,30 @@ const UsersPage = () => {
         </form>
       ) : null}
 
-      <div className="overflow-x-auto rounded-xl border border-navy/10 bg-white">
-        <table className="min-w-full text-left text-sm">
+      <div className="space-y-3 sm:hidden">
+        {state.users.map((user) => (
+          <article key={user.id} className="space-y-3 rounded-xl border border-navy/10 bg-white p-4">
+            <div className="space-y-1 break-words">
+              <p className="font-semibold text-navy">{user.name}</p>
+              <p className="text-sm text-navy/70">{user.username}</p>
+              <p className="break-all text-sm text-navy/70">{user.email}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant={user.role === "admin" ? "default" : "outline"} onClick={() => setRole(user.id, "admin")}>
+                Admin
+              </Button>
+              <Button size="sm" variant={user.role === "member" ? "default" : "outline"} onClick={() => setRole(user.id, "member")}>
+                Member
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => openEdit(user)}>
+                Change credentials
+              </Button>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto rounded-xl border border-navy/10 bg-white sm:block">
+        <table className="w-full table-auto text-left text-sm">
           <thead className="border-b border-navy/10 bg-cream">
             <tr>
               <th className="px-4 py-3">Name</th>

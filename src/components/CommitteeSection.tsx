@@ -39,8 +39,8 @@ const CommitteeSection = () => {
           <Reveal direction="zoom" className="mx-auto mb-10 max-w-5xl">
             <div className="rounded-xl border border-gold/20 bg-navy p-6 text-primary-foreground sm:p-8">
               <div className="flex flex-col items-center gap-6 sm:flex-row">
-                <div className="h-28 w-28 shrink-0 overflow-hidden rounded-full ring-2 ring-gold/50 ring-offset-2 ring-offset-navy sm:h-32 sm:w-32">
-                  {chair.photoUrl ? <CmsImage src={chair.photoUrl} alt={chair.name} width={256} height={256} className="h-full w-full object-cover" /> : null}
+                <div className="aspect-[4/5] w-28 shrink-0 overflow-hidden rounded-xl bg-white/10 ring-2 ring-gold/50 ring-offset-2 ring-offset-navy sm:w-32">
+                  {chair.photoUrl ? <CmsImage src={chair.photoUrl} alt={chair.name} width={256} height={320} className="h-full w-full object-contain object-top" /> : null}
                 </div>
                 <div className="text-center sm:text-left">
                   <p className="mb-1 text-xs font-medium tracking-wide text-gold">{chair.position}</p>
@@ -63,9 +63,9 @@ const CommitteeSection = () => {
                   <div className="mt-auto flex flex-wrap justify-around gap-3 pt-2">
                     {leaders.map((leader) => (
                       <div key={leader.id} className="group flex w-28 flex-col items-center gap-2">
-                        <div className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-navy/10 ring-2 ring-gold/60 transition-all duration-300 group-hover:scale-110 group-hover:ring-gold sm:h-24 sm:w-24">
+                        <div className="aspect-[4/5] w-20 overflow-hidden rounded-xl bg-navy/10 ring-2 ring-gold/60 transition-all duration-300 group-hover:scale-105 group-hover:ring-gold sm:w-24">
                           {leader.photoUrl ? (
-                            <CmsImage src={leader.photoUrl} alt="" width={192} height={192} onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-cover" />
+                            <CmsImage src={leader.photoUrl} alt="" width={192} height={240} onError={(e) => { e.currentTarget.style.display = "none"; }} className="h-full w-full object-contain object-top" />
                           ) : (
                             <span className="font-display text-sm font-bold text-navy">{initials(leader.name)}</span>
                           )}

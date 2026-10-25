@@ -103,11 +103,11 @@ const PostersPage = () => {
           <Field label="Verse reference" value={editing.verseRef || ""} onChange={(verseRef) => setEditing({ ...editing, verseRef })} />
           <Field label="Giving project ID" value={String(editing.projectId ?? "")} onChange={(projectId) => setEditing({ ...editing, projectId: Number(projectId) || null })} />
           <ImageField label="Poster image" value={editing.imageUrl || ""} onChange={(imageUrl) => setEditing({ ...editing, imageUrl })} />
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={Boolean(editing.published)} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} />
             Published
           </label>
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={Boolean(editing.featured)} onChange={(e) => setEditing({ ...editing, featured: e.target.checked })} />
             Featured
           </label>
@@ -121,7 +121,7 @@ const PostersPage = () => {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[...state.posters].sort((a, b) => a.sortOrder - b.sortOrder).map((poster) => (
           <article key={poster.id} className="overflow-hidden rounded-xl border border-navy/10 bg-white">
-            {poster.imageUrl ? <img src={poster.imageUrl} alt={poster.title} className="aspect-[4/5] w-full object-cover" /> : <div className="aspect-[4/5] bg-cream" />}
+            {poster.imageUrl ? <img src={poster.imageUrl} alt={poster.title} className="aspect-[4/5] w-full bg-cream object-contain" /> : <div className="aspect-[4/5] bg-cream" />}
             <div className="space-y-3 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>

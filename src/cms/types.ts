@@ -72,8 +72,11 @@ export interface Slide {
   title: string;
   caption: string;
   attribution: string;
+  placement?: "hero" | "scripture";
+  focal?: "center" | "top" | "bottom" | "left" | "right";
   published: boolean;
   sortOrder: number;
+  focal?: "center" | "top" | "bottom" | "left" | "right";
 }
 
 export interface ValueItem {

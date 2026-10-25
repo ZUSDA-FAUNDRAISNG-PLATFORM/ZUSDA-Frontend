@@ -53,7 +53,7 @@ export default function Lightbox({ items, index, onClose, onChange }: Props) {
         if (Math.abs(dx) > 50) go(dx < 0 ? 1 : -1);
       }}
     >
-      <button type="button" aria-label="Close" onClick={onClose} className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25">
+      <button type="button" aria-label="Close" onClick={onClose} className="absolute right-4 top-4 flex h-11 w-11 items-center justify-center rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25">
         <X size={22} />
       </button>
       <button
@@ -63,7 +63,7 @@ export default function Lightbox({ items, index, onClose, onChange }: Props) {
           e.stopPropagation();
           go(-1);
         }}
-        className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25"
+        className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25"
       >
         <ChevronLeft size={26} />
       </button>
@@ -82,7 +82,7 @@ export default function Lightbox({ items, index, onClose, onChange }: Props) {
           e.stopPropagation();
           go(1);
         }}
-        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25"
+        className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/10 p-2 text-white transition-colors hover:bg-white/25"
       >
         <ChevronRight size={26} />
       </button>

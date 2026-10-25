@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useState, type ReactNode } from "react";
 import { useCms } from "@/cms/CmsProvider";
 import type { CmsCollection, CmsState } from "@/cms/types";
 import { ImageField } from "@/components/admin/ImageField";
@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 
-type FieldType = "text" | "textarea" | "image" | "date";
+type FieldType = "text" | "textarea" | "image" | "date" | "select";
 
 export function SimpleResourcePage<K extends CmsCollection>({
   title,
@@ -16,27 +16,45 @@ export function SimpleResourcePage<K extends CmsCollection>({
   fields,
   defaults,
   preview,
+  itemFilter,
+  rowBadge,
 }: {
   title: string;
   description: string;
   collection: K;
-  fields: { key: string; label: string; type?: FieldType }[];
+  fields: {
+    key: string;
+    label: string;
+    type?: FieldType;
+    options?: { value: string; label: string }[];
+    fallbackValue?: string;
+    render?: (props: { value: string; onChange: (value: string) => void }) => ReactNode;
+  }[];
   defaults: Record<string, unknown>;
   preview?: (item: CmsState[K][number]) => string;
+  itemFilter?: (item: CmsState[K][number]) => boolean;
+  rowBadge?: (item: CmsState[K][number]) => string;
 }) {
   const { state, upsertItem, deleteItem, saveCollection } = useCms();
   const items = state[collection] as Array<CmsState[K][number] & { id: number; published: boolean; sortOrder: number }>;
+  const visibleItems = items.filter((item) => !itemFilter || itemFilter(item)).sort((a, b) => a.sortOrder - b.sortOrder);
   const [editing, setEditing] = useState<Record<string, unknown> | null>(null);
 
   const save = (event: FormEvent) => {
     event.preventDefault();
     if (!editing) return;
-    upsertItem(collection, editing as never);
+    const savedItem = { ...editing };
+    fields.forEach((field) => {
+      if (field.type === "select" && savedItem[field.key] === undefined && field.fallbackValue !== undefined) {
+        savedItem[field.key] = field.fallbackValue;
+      }
+    });
+    upsertItem(collection, savedItem as never);
     setEditing(null);
   };
 
   const move = (id: number, direction: -1 | 1) => {
-    const ordered = [...items].sort((a, b) => a.sortOrder - b.sortOrder);
+    const ordered = visibleItems;
     const index = ordered.findIndex((item) => item.id === id);
     const swap = index + direction;
     if (swap < 0 || swap >= ordered.length) return;
@@ -68,7 +86,25 @@ export function SimpleResourcePage<K extends CmsCollection>({
         <form onSubmit={save} className="mb-8 grid gap-4 rounded-xl border border-navy/10 bg-white p-4 sm:p-6 md:grid-cols-2">
           {fields.map((field) => (
             <div key={field.key} className={field.type === "textarea" || field.type === "image" ? "md:col-span-2" : ""}>
-              {field.type === "textarea" ? (
+              {field.render ? (
+                field.render({
+                  value: String(editing[field.key] || ""),
+                  onChange: (value) => setEditing({ ...editing, [field.key]: value }),
+                })
+                ) : field.type === "select" ? (
+                  <>
+                    <Label>{field.label}</Label>
+                    <select
+                      className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                      value={String(editing[field.key] ?? field.fallbackValue ?? "")}
+                      onChange={(event) => setEditing({ ...editing, [field.key]: event.target.value })}
+                    >
+                      {field.options?.map((option) => (
+                        <option key={option.value} value={option.value}>{option.label}</option>
+                      ))}
+                    </select>
+                  </>
+                ) : field.type === "textarea" ? (
                 <>
                   <Label>{field.label}</Label>
                   <Textarea className="mt-1.5" value={String(editing[field.key] || "")} onChange={(e) => setEditing({ ...editing, [field.key]: e.target.value })} />
@@ -88,7 +124,7 @@ export function SimpleResourcePage<K extends CmsCollection>({
               )}
             </div>
           ))}
-          <label className="flex items-center gap-2 text-sm">
+          <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={Boolean(editing.published)} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} />
             Published
           </label>
@@ -100,10 +136,17 @@ export function SimpleResourcePage<K extends CmsCollection>({
       ) : null}
 
       <div className="space-y-3">
-        {[...items].sort((a, b) => a.sortOrder - b.sortOrder).map((item) => (
+        {visibleItems.map((item) => (
           <div key={item.id} className="flex flex-col gap-3 rounded-xl border border-navy/10 bg-white p-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="min-w-0">
-              <p className="font-medium text-navy">{preview ? preview(item) : `#${item.id}`}</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="font-medium text-navy">{preview ? preview(item) : `#${item.id}`}</p>
+                {rowBadge ? (
+                  <span className="rounded-full bg-navy/5 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-navy/70">
+                    {rowBadge(item)}
+                  </span>
+                ) : null}
+              </div>
               <p className="text-xs text-navy/50">{item.published ? "Published" : "Unpublished"}</p>
             </div>
             <div className="flex flex-wrap gap-2">

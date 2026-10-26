@@ -1,4 +1,4 @@
-const CACHE = "zusda-v2";
+const CACHE = "zusda-v4";
 
 self.addEventListener("install", () => self.skipWaiting());
 

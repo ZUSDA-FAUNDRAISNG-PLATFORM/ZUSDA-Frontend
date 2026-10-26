@@ -1,6 +1,7 @@
 import helpingHands from "@/assets/helping-hands.jpg";
 import worshipSunrise from "@/assets/worship-sunrise.jpg";
 import heroBg from "@/assets/hero-bg.webp";
+import type { Slide } from "./types";
 import gregoryDaghe from "@/assets/committee/Gregory_Daghe.webp";
 import pastorMoses from "@/assets/committee/Pastor_Moses_Kariuki.webp";
 import leahMonchari from "@/assets/committee/Leah_Monchari.webp";
@@ -25,6 +26,46 @@ const motivationImages = Object.entries(
   .sort(([a], [b]) => a.localeCompare(b, undefined, { numeric: true }))
   .map(([, src]) => src);
 
+export const defaultHeroSlides: Slide[] = [
+  {
+    id: 5,
+    imageUrl: heroBg,
+    title: "Njooni Tusemezane",
+    caption: "",
+    attribution: "",
+    placement: "hero",
+    published: true,
+    sortOrder: 1,
+  },
+  {
+    id: 6,
+    imageUrl: "/uploads/gallery-0-imageurl.jpg",
+    title: "Mission in Kinamba",
+    caption: "",
+    attribution: "",
+    placement: "hero",
+    published: true,
+    sortOrder: 2,
+  },
+  {
+    id: 7,
+    imageUrl: "/uploads/gallery-1-imageurl.jpg",
+    title: "Serving Together",
+    caption: "",
+    attribution: "",
+    placement: "hero",
+    published: true,
+    sortOrder: 3,
+  },
+];
+
+export function missingDefaultHeroSlides(slides: Slide[]) {
+  const heroImagePaths = new Set(
+    slides.filter((slide) => slide.placement === "hero").map((slide) => slide.imageUrl),
+  );
+  return defaultHeroSlides.filter((slide) => !heroImagePaths.has(slide.imageUrl));
+}
+
 export async function createSeedState(): Promise<CmsState> {
   const adminHash = await hashPassword("Kinamba2026");
   const memberHash = await hashPassword("Member2026");
@@ -39,6 +80,7 @@ export async function createSeedState(): Promise<CmsState> {
       heroSubtitle: "Come Now, Let Us Reason Together",
       heroMeta: "Isaiah 1:18 (NKJV) · 13–27 December 2026 · Kinamba, Naivasha",
       heroImageUrl: worshipSunrise,
+      heroSeeded: false,
       countdownDate: "2026-12-13T00:00:00",
       aboutEyebrow: "About the Mission",
       aboutTitle: "A Faith-Driven Outreach Initiative",
@@ -67,6 +109,7 @@ export async function createSeedState(): Promise<CmsState> {
     },
     posters: defaultPosters(),
     slides: [
+      ...defaultHeroSlides,
       {
         id: 1,
         imageUrl: helpingHands,

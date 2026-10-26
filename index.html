@@ -24,7 +24,25 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700;800&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="manifest" href="/manifest.webmanifest">
-  <link rel="preload" as="image" href="/uploads/site-heroimageurl.jpg" fetchpriority="high">
+  <script>
+    try {
+      const slides = JSON.parse(localStorage.getItem("zusda-hero-slides-v1") || "[]");
+      const src = slides[0]?.src;
+      if (typeof src === "string" && src) {
+        const url = new URL(src, location.href);
+        if (url.protocol === "http:" || url.protocol === "https:") {
+          const preload = document.createElement("link");
+          preload.rel = "preload";
+          preload.as = "image";
+          preload.href = url.href;
+          preload.fetchPriority = "high";
+          document.head.append(preload);
+        }
+      }
+    } catch {
+      // Ignore invalid or unavailable local hero cache.
+    }
+  </script>
   <meta name="theme-color" content="#0f172a">
   <link rel="apple-touch-icon" href="/icon-192.png">
 </head>

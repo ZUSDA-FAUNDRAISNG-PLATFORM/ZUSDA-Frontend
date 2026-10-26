@@ -1,11 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { ApiError, getStoredToken } from "@/api/client";
 import * as cmsApi from "@/api/cms";
-import { LOCAL_ADMIN_TOKEN } from "@/lib/testAdmin";
+import { ADMIN_SESSION_EVENT, LOCAL_ADMIN_TOKEN } from "@/lib/testAdmin";
 import type { CmsCollection, CmsState, CmsUser, SiteSettings } from "./types";
-import { createSeedState, postersFromLegacyCollections } from "./seed";
-import { nextId, readJson, sanitizeCmsAssetRefs, writeJson } from "./utils";
+import { createSeedState, missingDefaultHeroSlides, postersFromLegacyCollections } from "./seed";
+import { cacheHeroSlides, nextId, readJson, sanitizeCmsAssetRefs, writeJson } from "./utils";
 
 const STORAGE_KEY = "zusda-cms-v2";
 const USERS_KEY = "zusda-cms-users-v1";
@@ -73,7 +73,10 @@ type LegacyCollection = {
 
 interface CmsContextValue {
   ready: boolean;
+  cmsAnswered: boolean;
+  cmsUnavailable: boolean;
   state: CmsState;
+  importDefaultHeroSlides: (onDemand?: boolean) => Promise<void>;
   updateSite: (patch: Partial<SiteSettings>) => void;
   saveCollection: <K extends CmsCollection>(key: K, items: CmsState[K]) => void;
   upsertItem: <K extends CmsCollection>(key: K, item: Partial<CmsState[K][number]> & { id?: number }) => void;
@@ -96,7 +99,7 @@ function describe(err: unknown) {
   return err instanceof Error ? err.message : "Could not save to the server.";
 }
 
-const repairRemote = (remote: any, seed: any) => {
+const repairRemote = (remote: Awaited<ReturnType<typeof cmsApi.fetchCms>>, seed: CmsState) => {
   const out = { ...remote };
   const stem = (u: string) =>
     u
@@ -105,42 +108,91 @@ const repairRemote = (remote: any, seed: any) => {
       .replace(/-(?=[A-Za-z0-9_-]{6,10}$)(?=[A-Za-z0-9_-]*[A-Z0-9_-])[A-Za-z0-9_-]{6,10}$/, "")
       .toLowerCase();
   const seedUrls: Record<string, string> = {};
-  const collect = (v: any) => {
+  const collect = (v: unknown): void => {
     if (Array.isArray(v)) v.forEach(collect);
     else if (v && typeof v === "object") Object.values(v).forEach(collect);
     else if (typeof v === "string" && v.startsWith("/assets/")) seedUrls[stem(v)] = v;
   };
   collect(seed);
-  const fix = (v: any): any => {
+  const fix = (v: unknown): unknown => {
     if (Array.isArray(v)) return v.map(fix);
-    if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fix(x)]));
+    if (v && typeof v === "object") {
+      return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, fix(x)]));
+    }
     if (typeof v === "string" && v.startsWith("/assets/")) return seedUrls[stem(v)] ?? v;
     return v;
   };
-  return fix(out);
+  return fix(out) as Awaited<ReturnType<typeof cmsApi.fetchCms>>;
 };
 
-let seedPromise: Promise<any> | null = null;
+let seedPromise: Promise<CmsState> | null = null;
 const getSeed = () => (seedPromise ??= createSeedState());
 
 export function CmsProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<CmsState | null>(null);
+  const [cmsAnswered, setCmsAnswered] = useState(false);
+  const [cmsUnavailable, setCmsUnavailable] = useState(false);
 
-  const apply = (updater: (current: CmsState) => CmsState) =>
-    setState((current) => (current ? updater(current) : current));
+  const apply = useCallback(
+    (updater: (current: CmsState) => CmsState) =>
+      setState((current) => (current ? updater(current) : current)),
+    [],
+  );
 
-  const refresh = async () => {
+  const refresh = useCallback(async () => {
     try {
-      const remote = repairRemote(await cmsApi.fetchCms(), await getSeed());
+      const seed = await getSeed();
+      let remote = await cmsApi.fetchCms();
+      setCmsAnswered(true);
+      setCmsUnavailable(false);
+      remote = repairRemote(remote, seed);
+      cacheHeroSlides(remote.slides);
       if (remote.site) {
         apply((current) => ({ ...current, ...remote, site: remote.site as SiteSettings, users: current.users }) as CmsState);
+      } else {
+        apply((current) => ({ ...current, slides: remote.slides }) as CmsState);
       }
     } catch {
-      // keep the current view
+      setCmsUnavailable(true);
+      toast.error("Could not refresh content from the server.");
     }
-  };
+  }, [apply]);
 
-  const push = (task: Promise<unknown>, okMessage?: string) => {
+  const importDefaultHeroSlides = useCallback(async (onDemand = false) => {
+    if (!hasServerToken()) {
+      if (onDemand) toast.error("Sign in with a server admin account to import default photos.");
+      return;
+    }
+
+    try {
+      const seed = await getSeed();
+      let remote = await cmsApi.fetchCms();
+      if (!remote.site) throw new Error("Site settings are unavailable.");
+
+      if (onDemand || !remote.site.heroSeeded) {
+        for (const { id: _id, ...slide } of missingDefaultHeroSlides(remote.slides)) {
+          await cmsApi.createCmsItem("slides", slide);
+        }
+        if (!remote.site.heroSeeded) await cmsApi.saveSite({ heroSeeded: true });
+        remote = await cmsApi.fetchCms();
+      }
+
+      setCmsAnswered(true);
+      setCmsUnavailable(false);
+      const fresh = repairRemote(remote, seed);
+      cacheHeroSlides(fresh.slides);
+      if (fresh.site) {
+        apply((current) => ({ ...current, ...fresh, site: fresh.site as SiteSettings, users: current.users }) as CmsState);
+      } else {
+        apply((current) => ({ ...current, slides: fresh.slides }) as CmsState);
+      }
+      if (onDemand) toast.success("Default photos imported.");
+    } catch (err) {
+      toast.error(`Could not import default photos: ${describe(err)}`);
+    }
+  }, [apply]);
+
+  const push = useCallback((task: Promise<unknown>, okMessage?: string) => {
     task
       .then(() => {
         if (okMessage) toast.success(okMessage);
@@ -149,10 +201,14 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         toast.error(describe(err));
         void refresh();
       });
-  };
+  }, [refresh]);
 
   useEffect(() => {
     let cancelled = false;
+    const retryHeroSeed = () => {
+      if (hasServerToken()) void refresh();
+    };
+    window.addEventListener(ADMIN_SESSION_EVENT, retryHeroSeed);
     const boot = async () => {
       const cached = readJson<CmsState>(STORAGE_KEY);
       const cachedUsers = readJson<CmsUser[]>(USERS_KEY) ?? cached?.users ?? FALLBACK_CMS_STATE.users;
@@ -191,20 +247,13 @@ export function CmsProvider({ children }: { children: ReactNode }) {
           mergedSite.countdownDate = seed.site.countdownDate;
         }
         const next = { ...seed, ...base, site: mergedSite, users } as CmsState;
-        const fixPhotos = (remoteList: any[], seedList: any[]) =>
+        const fixPhotos = (remoteList: CmsState["committee"], seedList: CmsState["committee"]) =>
           remoteList.map((item) => {
-            if (!item || typeof item.photoUrl !== "string" || !item.photoUrl.startsWith("/assets/")) return item;
-            const match = seedList.find((x) => x && x.name === item.name && typeof x.photoUrl === "string");
+            if (typeof item.photoUrl !== "string" || !item.photoUrl.startsWith("/assets/")) return item;
+            const match = seedList.find((x) => x.name === item.name);
             return match ? { ...item, photoUrl: match.photoUrl } : item;
           });
-        for (const k of Object.keys(seed)) {
-          if (k === "users") continue;
-          const seedList = (seed as any)[k];
-          const nextList = (next as any)[k];
-          if (Array.isArray(seedList) && Array.isArray(nextList)) {
-            (next as any)[k] = fixPhotos(nextList, seedList);
-          }
-        }
+        next.committee = fixPhotos(next.committee, seed.committee);
         return next;
       };
 
@@ -215,16 +264,26 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         if (!remote.site && hasServerToken()) {
           try {
             const { users: _ignored, ...seedContent } = seed;
+            seedContent.slides = seedContent.slides.filter((slide) => slide.placement !== "hero");
             remote = await cmsApi.importCms(seedContent);
           } catch {
             remote = await cmsApi.fetchCms();
           }
         }
-        if (remote.site && !cancelled) {
-          setState(buildState(repairRemote(remote, seed)));
+        if (!cancelled) {
+          setCmsAnswered(true);
+          setCmsUnavailable(false);
+          const fresh = repairRemote(remote, seed);
+          cacheHeroSlides(fresh.slides);
+          if (fresh.site) {
+            setState(buildState(fresh));
+          } else {
+            setState((current) => current ? { ...current, slides: fresh.slides } : current);
+          }
         }
       } catch {
         if (cancelled) return;
+        setCmsUnavailable(true);
         if (!safeCached) toast.error("Could not reach the server. Showing default content.");
         window.setTimeout(() => {
           if (!cancelled) void refresh();
@@ -234,8 +293,9 @@ export function CmsProvider({ children }: { children: ReactNode }) {
     void boot();
     return () => {
       cancelled = true;
+      window.removeEventListener(ADMIN_SESSION_EVENT, retryHeroSeed);
     };
-  }, []);
+  }, [refresh]);
 
   useEffect(() => {
     if (!state) return;
@@ -248,7 +308,10 @@ export function CmsProvider({ children }: { children: ReactNode }) {
     if (!state) return null;
     return {
       ready: true,
+      cmsAnswered,
+      cmsUnavailable,
       state,
+      importDefaultHeroSlides,
       updateSite: (patch) => {
         apply((current) => ({ ...current, site: { ...current.site, ...patch } }));
         push(cmsApi.saveSite(patch), "Site settings saved.");
@@ -305,7 +368,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         return created;
       },
     };
-  }, [state]);
+  }, [state, cmsAnswered, cmsUnavailable, apply, importDefaultHeroSlides, push]);
 
   if (!value) {
     return (

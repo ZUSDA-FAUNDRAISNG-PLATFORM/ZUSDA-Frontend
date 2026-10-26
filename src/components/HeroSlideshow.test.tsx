@@ -111,6 +111,37 @@ describe("HeroSlideshow", () => {
     expect(JSON.parse(localStorage.getItem("zusda-hero-slides-v1") ?? "null")).toEqual([]);
   });
 
+  it("never shows the Site settings image with a published hero slide", () => {
+    const { container, rerender } = render(
+      <HeroSlideshow
+        images={[images[0]]}
+        cmsReady
+        fallbackImage="/settings.jpg"
+      />,
+    );
+
+    expect(container.querySelector('img[src="/first.jpg"]')).not.toBeNull();
+    expect(container.querySelector('img[src="/settings.jpg"]')).toBeNull();
+
+    rerender(<HeroSlideshow images={[]} cmsReady fallbackImage="/settings.jpg" />);
+
+    expect(container.querySelector('img[src="/settings.jpg"]')).not.toBeNull();
+  });
+
+  it("does not show the Site settings image while an empty hero cache is loading", () => {
+    vi.useFakeTimers();
+    localStorage.setItem("zusda-hero-slides-v1", JSON.stringify([]));
+    const { container } = render(
+      <HeroSlideshow images={[]} cmsReady={false} fallbackImage="/settings.jpg" />,
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    expect(container.querySelector('img[src="/settings.jpg"]')).toBeNull();
+  });
+
   it("uses seed slides only when the CMS is unreachable and no cache exists", () => {
     const { container } = render(
       <HeroSlideshow images={[{ src: "/seed.jpg", sortOrder: 1 }]} cmsReady={false} cmsUnavailable />,

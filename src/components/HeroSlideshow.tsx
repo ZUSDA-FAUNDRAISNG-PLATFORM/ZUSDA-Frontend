@@ -72,11 +72,11 @@ const HeroSlideshow = ({
   }, [cmsReady, cmsUnavailable, fallbackImage, hasCache, images, slides.length]);
 
   useEffect(() => {
-    if (cmsReady || cmsUnavailable || slides.length > 0 || showFallback) return;
+    if (cmsReady || cmsUnavailable || hasCache || slides.length > 0 || showFallback) return;
 
     const timer = window.setTimeout(() => setShowFallback(true), CMS_TIMEOUT_MS);
     return () => window.clearTimeout(timer);
-  }, [cmsReady, cmsUnavailable, fallbackImage, showFallback, slides.length]);
+  }, [cmsReady, cmsUnavailable, fallbackImage, hasCache, showFallback, slides.length]);
 
   useEffect(() => {
     if (slides.length < 2) return;

@@ -1,5 +1,22 @@
 import type { CmsState } from "./types";
 
+export const HERO_SLIDES_CACHE = "zusda-hero-slides-v1";
+
+export function cacheHeroSlides(slides: CmsState["slides"]) {
+  writeJson(
+    HERO_SLIDES_CACHE,
+    slides
+      .filter((slide) => slide.placement === "hero" && slide.published && slide.imageUrl.trim())
+      .sort((a, b) => a.sortOrder - b.sortOrder)
+      .map((slide) => ({
+        src: slide.imageUrl,
+        caption: slide.caption || undefined,
+        focal: slide.focal ?? "center",
+        sortOrder: slide.sortOrder,
+      })),
+  );
+}
+
 export function nextId<T extends { id: number }>(items: T[]) {
   return (items.reduce((max, item) => Math.max(max, item.id), 0) || 0) + 1;
 }

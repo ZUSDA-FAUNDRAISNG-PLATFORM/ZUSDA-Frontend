@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { ChevronDown } from "lucide-react";
-import heroFallbackImage from "@/assets/hero-bg.webp";
 import CountdownTimer from "./CountdownTimer";
 import HeroSlideshow, { type HeroSlideImage } from "./HeroSlideshow";
 import Reveal from "./Reveal";
@@ -9,37 +8,36 @@ import { useInvolvement } from "./InvolvementDialogs";
 import { useCountdown } from "@/hooks/useCountdown";
 import { useCms, usePublished } from "@/cms/CmsProvider";
 
-const GALLERY_FALLBACKS = ["/uploads/gallery-0-imageurl.jpg", "/uploads/gallery-1-imageurl.jpg"];
-
 const HeroSection = () => {
   const { open } = useInvolvement();
-  const { state } = useCms();
+  const { state, cmsAnswered, cmsUnavailable } = useCms();
   const posters = usePublished("posters");
   const publishedSlides = usePublished("slides");
   const featured = posters.find((item) => item.featured) ?? posters[0];
   const { site } = state;
   const countdown = useCountdown(site.countdownDate);
-  const slides = useMemo<HeroSlideImage[]>(() => {
-    const cmsSlides = publishedSlides
+  const slides = useMemo<HeroSlideImage[]>(
+    () =>
+      publishedSlides
       .filter((slide) => slide.placement === "hero")
       .filter((slide) => slide.imageUrl.trim())
       .map((slide) => ({
         src: slide.imageUrl,
         caption: slide.caption || undefined,
         focal: slide.focal ?? "center",
-      }));
-
-    if (cmsSlides.length >= 2) return cmsSlides;
-
-    return [
-      { src: site.heroImageUrl || heroFallbackImage },
-      ...GALLERY_FALLBACKS.map((src) => ({ src })),
-    ];
-  }, [publishedSlides, site.heroImageUrl]);
+        sortOrder: slide.sortOrder,
+      })),
+    [publishedSlides],
+  );
 
   return (
     <section id="home" className="relative flex min-h-screen supports-[height:100svh]:min-h-[100svh] items-center justify-center overflow-hidden">
-      <HeroSlideshow images={slides} />
+      <HeroSlideshow
+        images={slides}
+        cmsReady={cmsAnswered}
+        cmsUnavailable={cmsUnavailable}
+        fallbackImage={site.heroImageUrl}
+      />
 
       <div className="container relative z-10 mx-auto px-4 pb-24 pt-24 sm:pb-24 sm:pt-32">
         <div className="mx-auto max-w-4xl p-2 text-center sm:p-10 md:p-14">

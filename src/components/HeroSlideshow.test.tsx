@@ -3,12 +3,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import HeroSlideshow from "./HeroSlideshow";
 
 const images = [
-  { src: "/first.jpg", caption: "First caption" },
-  { src: "/second.jpg", caption: "Second caption" },
+  { src: "/first.jpg", caption: "First caption", sortOrder: 1 },
+  { src: "/second.jpg", caption: "Second caption", sortOrder: 2 },
 ];
 
 describe("HeroSlideshow", () => {
   afterEach(() => {
+    localStorage.removeItem("zusda-hero-slides-v1");
     vi.clearAllTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
@@ -69,5 +70,87 @@ describe("HeroSlideshow", () => {
     });
 
     expect(container.querySelector('img[src="/first.jpg"]')).not.toBeNull();
+  });
+
+  it("renders the cached slide immediately while fresh CMS slides are pending", () => {
+    localStorage.setItem("zusda-hero-slides-v1", JSON.stringify([images[0]]));
+
+    const { container } = render(<HeroSlideshow images={[]} cmsReady={false} fallbackImage="/settings.jpg" />);
+
+    expect(container.querySelector('img[src="/first.jpg"]')).not.toBeNull();
+    expect(container.querySelector('img[src="/settings.jpg"]')).toBeNull();
+  });
+
+  it("replaces cached slides as soon as the CMS responds", () => {
+    localStorage.setItem("zusda-hero-slides-v1", JSON.stringify([images[0]]));
+
+    const { container, rerender } = render(
+      <HeroSlideshow images={[]} cmsReady={false} fallbackImage="/settings.jpg" />,
+    );
+
+    expect(container.querySelector('img[src="/first.jpg"]')).not.toBeNull();
+    rerender(<HeroSlideshow images={[{ src: "/fresh.jpg", sortOrder: 1 }]} fallbackImage="/settings.jpg" />);
+
+    expect(container.querySelector('img[src="/first.jpg"]')).toBeNull();
+    expect(container.querySelector('img[src="/fresh.jpg"]')).not.toBeNull();
+    expect(JSON.parse(localStorage.getItem("zusda-hero-slides-v1") ?? "null")).toEqual([
+      { src: "/fresh.jpg", sortOrder: 1 },
+    ]);
+  });
+
+  it("shows only the Site settings image when the CMS responds with no hero images", () => {
+    localStorage.setItem("zusda-hero-slides-v1", JSON.stringify([images[0]]));
+
+    const { container, rerender } = render(
+      <HeroSlideshow images={[]} cmsReady={false} fallbackImage="/settings.jpg" />,
+    );
+    rerender(<HeroSlideshow images={[]} cmsReady fallbackImage="/settings.jpg" />);
+
+    expect(container.querySelector('img[src="/first.jpg"]')).toBeNull();
+    expect(container.querySelector('img[src="/settings.jpg"]')).not.toBeNull();
+    expect(JSON.parse(localStorage.getItem("zusda-hero-slides-v1") ?? "null")).toEqual([]);
+  });
+
+  it("uses seed slides only when the CMS is unreachable and no cache exists", () => {
+    const { container } = render(
+      <HeroSlideshow images={[{ src: "/seed.jpg", sortOrder: 1 }]} cmsReady={false} cmsUnavailable />,
+    );
+
+    expect(container.querySelector('img[src="/seed.jpg"]')).not.toBeNull();
+    expect(localStorage.getItem("zusda-hero-slides-v1")).toBeNull();
+  });
+
+  it("does not use seed slides offline when an empty CMS cache exists", () => {
+    localStorage.setItem("zusda-hero-slides-v1", JSON.stringify([]));
+    const { container } = render(
+      <HeroSlideshow
+        images={[{ src: "/seed.jpg", sortOrder: 1 }]}
+        cmsReady={false}
+        cmsUnavailable
+        fallbackImage="/settings.jpg"
+      />,
+    );
+
+    expect(container.querySelector('img[src="/seed.jpg"]')).toBeNull();
+    expect(container.querySelector('img[src="/settings.jpg"]')).not.toBeNull();
+  });
+
+  it("shows only a navy placeholder before the CMS timeout when no slide cache exists", () => {
+    vi.useFakeTimers();
+    const { container } = render(
+      <HeroSlideshow images={[]} cmsReady={false} fallbackImage="/settings.jpg" />,
+    );
+
+    expect(container.querySelector("img")).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(2999);
+    });
+    expect(container.querySelector("img")).toBeNull();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(container.querySelector('img[src="/settings.jpg"]')).not.toBeNull();
   });
 });

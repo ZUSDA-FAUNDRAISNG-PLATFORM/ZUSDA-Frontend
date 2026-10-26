@@ -23,6 +23,7 @@ export interface SiteSettings {
   heroSubtitle: string;
   heroMeta: string;
   heroImageUrl: string;
+  heroSeeded?: boolean;
   countdownDate: string;
   aboutEyebrow: string;
   aboutTitle: string;

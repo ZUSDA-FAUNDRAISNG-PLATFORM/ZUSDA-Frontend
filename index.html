@@ -27,8 +27,8 @@
   <script>
     try {
       const slides = JSON.parse(localStorage.getItem("zusda-hero-slides-v1") || "[]");
-      const src = slides[0]?.src;
-      if (typeof src === "string" && src) {
+      const src = Array.isArray(slides) ? slides[0]?.src : null;
+      if (typeof src === "string" && src.trim()) {
         const url = new URL(src, location.href);
         if (url.protocol === "http:" || url.protocol === "https:") {
           const preload = document.createElement("link");

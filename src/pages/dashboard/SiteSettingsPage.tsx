@@ -59,7 +59,14 @@ const SiteSettingsPage = () => {
         <Label>Footer blurb</Label>
         <Textarea className="mt-1.5" value={form.footerBlurb} onChange={(e) => set("footerBlurb", e.target.value)} />
       </div>
-      <ImageField label="Hero image" value={form.heroImageUrl} onChange={(heroImageUrl) => setForm({ ...form, heroImageUrl })} />
+      <ImageField
+        label="Default hero image (only used when no hero slide is published)"
+        value={form.heroImageUrl}
+        onChange={(heroImageUrl) => setForm({ ...form, heroImageUrl })}
+      />
+      <p className="text-sm text-muted-foreground">
+        Published hero slides take priority. This image appears only when no published hero slide has an image.
+      </p>
       <ImageField label="CTA background" value={form.ctaImageUrl} onChange={(ctaImageUrl) => setForm({ ...form, ctaImageUrl })} />
       <Button type="submit" className="bg-navy text-white hover:bg-navy-light">Save settings</Button>
     </form>

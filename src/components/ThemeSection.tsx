@@ -56,7 +56,7 @@ const ThemeSection = () => {
                       if (poster.ctaHref?.startsWith("#")) {
                         document.getElementById(poster.ctaHref.slice(1))?.scrollIntoView({ behavior: "smooth" });
                       }
-                      open("give", { projectId: poster.projectId, causeName: poster.title });
+                      open("give", { mode: "campaign", projectId: poster.projectId, posterId: poster.id, causeName: poster.title });
                     }}
                     className="inline-flex min-h-11 items-center gap-2 text-left text-sm font-semibold text-navy underline decoration-gold decoration-2 underline-offset-4 transition-colors hover:text-gold-dark"
                   >

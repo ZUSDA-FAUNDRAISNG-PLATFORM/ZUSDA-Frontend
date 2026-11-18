@@ -64,11 +64,22 @@ export default {
           DEFAULT: "hsl(var(--cream))",
           dark: "hsl(var(--cream-dark))",
         },
+        brand: {
+          DEFAULT: "#1C1D4D",
+          hover: "#2A2C66",
+        },
+        page: "#F7F8FC",
+        "section-alt": "#EEF2F7",
+        footer: "#15163A",
+        heading: "#111827",
+        success: "#16A34A",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        card: "20px",
+        button: "16px",
       },
       keyframes: {
         "accordion-down": {

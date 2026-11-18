@@ -1,4 +1,5 @@
 import { useState, createContext, useContext, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -6,14 +7,16 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { z } from "zod";
-import { useCms } from "@/cms/CmsProvider";
-import { submitMpesaDonation, submitMissionaryRegistration, submitPrayerSignup } from "@/api/involvement";
+import { submitMissionaryRegistration, submitPrayerSignup } from "@/api/involvement";
 
 type DialogKind = "pray" | "give" | "go" | null;
 
 export interface GiveOptions {
+  /** Explicit flow. Defaults to general when omitted. */
+  mode?: "campaign" | "general";
   projectId?: number | null;
   causeName?: string | null;
+  posterId?: number | null;
 }
 
 const DialogCtx = createContext<{
@@ -29,14 +32,23 @@ const nameSchema = z.string().trim().min(2, "Name too short").max(100);
 
 export const InvolvementProvider = ({ children }: { children: ReactNode }) => {
   const [kind, setKind] = useState<DialogKind>(null);
-  const [giveOptions, setGiveOptions] = useState<GiveOptions>({});
-  const close = () => {
-    setKind(null);
-    setGiveOptions({});
-  };
+  const navigate = useNavigate();
+
+  const close = () => setKind(null);
 
   const open = (k: DialogKind, options?: GiveOptions) => {
-    setGiveOptions(options ?? {});
+    if (k === "give") {
+      const mode = options?.mode === "campaign" ? "campaign" : "general";
+      const params = new URLSearchParams();
+      params.set("mode", mode);
+      if (mode === "campaign") {
+        if (options?.projectId != null) params.set("projectId", String(options.projectId));
+        if (options?.posterId != null) params.set("posterId", String(options.posterId));
+        if (options?.causeName) params.set("cause", options.causeName);
+      }
+      navigate(`/give?${params.toString()}`);
+      return;
+    }
     setKind(k);
   };
 
@@ -48,12 +60,6 @@ export const InvolvementProvider = ({ children }: { children: ReactNode }) => {
     <DialogCtx.Provider value={{ open, notifyContribution }}>
       {children}
       <PrayDialog open={kind === "pray"} onClose={close} />
-      <GiveDialog
-        open={kind === "give"}
-        onClose={close}
-        projectId={giveOptions.projectId}
-        causeName={giveOptions.causeName}
-      />
       <GoDialog open={kind === "go"} onClose={close} />
     </DialogCtx.Provider>
   );
@@ -105,77 +111,6 @@ const PrayDialog = ({ open, onClose }: { open: boolean; onClose: () => void }) =
           <div><Label>Prayer Request / Message (optional)</Label><Textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} maxLength={1000} rows={3} /></div>
           <Button type="submit" disabled={loading} className="w-full bg-navy hover:bg-navy-light text-primary-foreground">
             {loading ? "Submitting..." : "Commit to Pray"}
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-const GiveDialog = ({
-  open,
-  onClose,
-  projectId,
-  causeName,
-}: {
-  open: boolean;
-  onClose: () => void;
-  projectId?: number | null;
-  causeName?: string | null;
-}) => {
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ full_name: "", phone: "", amount: "" });
-  const { notifyContribution } = useInvolvement();
-  const { state } = useCms();
-  const cause = causeName?.trim() || "this outreach";
-  const paybill = state.site.paybill || "247247";
-  const account = state.site.paybillAccount || "593021";
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      phoneSchema.parse(form.phone);
-      const amt = Number(form.amount);
-      if (!amt || amt < 1) throw new Error("Amount must be at least KES 1");
-    } catch (err: any) {
-      toast.error(err.errors?.[0]?.message ?? err.message ?? "Invalid input");
-      return;
-    }
-    setLoading(true);
-    try {
-      await submitMpesaDonation({
-        donor_name: form.full_name.trim() || "Anonymous",
-        phone: form.phone.trim(),
-        amount: Number(form.amount),
-        project_id: projectId ?? 1,
-      });
-      notifyContribution(Number(form.amount), form.phone.trim() || form.full_name.trim());
-      toast.success("M-Pesa prompt sent! Enter your PIN on your phone to complete the donation.");
-      setForm({ full_name: "", phone: "", amount: "" });
-      onClose();
-    } catch {
-      toast.error("Could not record contribution. Try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle className="font-display text-2xl text-navy">Support {cause}</DialogTitle>
-          <DialogDescription>Your gift is applied to this specific outreach. Every shilling is accounted for.</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={submit} className="space-y-4">
-          <div><Label>Full Name (optional)</Label><Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} maxLength={100} /></div>
-          <div><Label>M-Pesa Phone Number</Label><Input required value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="0712345678" /></div>
-          <div><Label>Amount (KES)</Label><Input required type="number" min={1} value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value })} placeholder="500" /></div>
-          <div className="text-xs text-muted-foreground bg-cream rounded-md p-3">
-            You can also send directly via M-Pesa Paybill <strong>{paybill}</strong>, Account: <strong>{account}</strong>.
-          </div>
-          <Button type="submit" disabled={loading} className="w-full bg-navy text-white hover:bg-navy-light">
-            {loading ? "Processing..." : `Give toward ${cause}`}
           </Button>
         </form>
       </DialogContent>

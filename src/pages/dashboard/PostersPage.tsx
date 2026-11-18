@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FOCAL_OPTIONS, focalObjectClass } from "@/lib/imageFocal";
 
 const emptyPoster = (): Omit<Poster, "id"> => ({
   title: "",
@@ -23,6 +24,8 @@ const emptyPoster = (): Omit<Poster, "id"> => ({
   ctaLabel: "Support this outreach",
   ctaHref: "#budget",
   projectId: 1,
+  focal: "center",
+  committeeId: null,
   featured: false,
   published: true,
   sortOrder: 99,
@@ -44,6 +47,8 @@ const PostersPage = () => {
       title: editing.title.trim(),
       id: editing.id || nextId(state.posters),
       projectId: Number(editing.projectId || 1),
+      committeeId: editing.committeeId ? Number(editing.committeeId) : null,
+      focal: editing.focal || "center",
     };
     const next = editing.id
       ? state.posters.map((item) => (item.id === payload.id ? payload : payload.featured ? { ...item, featured: false } : item))
@@ -74,8 +79,10 @@ const PostersPage = () => {
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="font-display text-3xl font-bold text-navy">Homepage posters</h1>
-          <p className="text-sm text-muted-foreground">These cards appear in the theme / outreach section.</p>
+          <h1 className="font-display text-3xl font-bold text-navy">Campaign Posters</h1>
+          <p className="text-sm text-muted-foreground">
+            These cards appear as featured campaigns. Assign a committee only when it should be shown.
+          </p>
         </div>
         <Button className="bg-navy text-white hover:bg-navy-light" onClick={() => setEditing(emptyPoster())}>
           Add poster
@@ -102,10 +109,47 @@ const PostersPage = () => {
           </div>
           <Field label="Verse reference" value={editing.verseRef || ""} onChange={(verseRef) => setEditing({ ...editing, verseRef })} />
           <Field label="Giving project ID" value={String(editing.projectId ?? "")} onChange={(projectId) => setEditing({ ...editing, projectId: Number(projectId) || null })} />
+          <div>
+            <Label>Assigned Committee</Label>
+            <p className="mt-1 text-xs text-muted-foreground">Hidden by default. Choose a committee only when it should appear.</p>
+            <select
+              className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={editing.committeeId == null ? "" : String(editing.committeeId)}
+              onChange={(e) =>
+                setEditing({
+                  ...editing,
+                  committeeId: e.target.value ? Number(e.target.value) : null,
+                })
+              }
+            >
+              <option value="">None</option>
+              {(state.committees ?? [])
+                .filter((item) => item.published)
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+            </select>
+          </div>
+          <div>
+            <Label>Image Focus</Label>
+            <select
+              className="mt-1.5 flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              value={editing.focal || "center"}
+              onChange={(e) => setEditing({ ...editing, focal: e.target.value as Poster["focal"] })}
+            >
+              {FOCAL_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <ImageField label="Poster image" value={editing.imageUrl || ""} onChange={(imageUrl) => setEditing({ ...editing, imageUrl })} />
           <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={Boolean(editing.published)} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} />
-            Published
+            Visible on website
           </label>
           <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={Boolean(editing.featured)} onChange={(e) => setEditing({ ...editing, featured: e.target.checked })} />
@@ -121,12 +165,25 @@ const PostersPage = () => {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         {[...state.posters].sort((a, b) => a.sortOrder - b.sortOrder).map((poster) => (
           <article key={poster.id} className="overflow-hidden rounded-xl border border-navy/10 bg-white">
-            {poster.imageUrl ? <img src={poster.imageUrl} alt={poster.title} className="aspect-[4/5] w-full bg-cream object-contain" /> : <div className="aspect-[4/5] bg-cream" />}
+            {poster.imageUrl ? (
+              <img
+                src={poster.imageUrl}
+                alt={poster.title}
+                className={`aspect-[4/5] w-full bg-cream ${focalObjectClass(poster.focal)}`}
+              />
+            ) : (
+              <div className="flex aspect-[4/5] items-center justify-center bg-cream text-sm text-navy/40">No image</div>
+            )}
             <div className="space-y-3 p-4">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <h2 className="font-display text-lg font-semibold text-navy">{poster.title}</h2>
-                  <p className="text-xs text-navy/50">{poster.published ? "Published" : "Unpublished"}{poster.featured ? " · Featured" : ""}</p>
+                  <p className="text-xs text-navy/50">
+                    {poster.published ? "Visible" : "Hidden"}
+                    {poster.featured ? " · Featured" : ""}
+                    {" · Display position "}
+                    {poster.sortOrder}
+                  </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -134,7 +191,7 @@ const PostersPage = () => {
                 <Button size="sm" variant="outline" onClick={() => move(poster.id, -1)}>Up</Button>
                 <Button size="sm" variant="outline" onClick={() => move(poster.id, 1)}>Down</Button>
                 <Button size="sm" variant="outline" onClick={() => upsertItem("posters", { ...poster, published: !poster.published })}>
-                  {poster.published ? "Unpublish" : "Publish"}
+                  {poster.published ? "Hide" : "Make Visible"}
                 </Button>
                 <Button size="sm" variant="destructive" onClick={() => deleteItem("posters", poster.id)}>Delete</Button>
               </div>

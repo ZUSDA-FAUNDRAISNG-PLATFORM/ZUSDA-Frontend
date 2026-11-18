@@ -1,5 +1,8 @@
 import Reveal from "@/components/Reveal";
+import CmsImage from "@/components/CmsImage";
+import { AssignedCommittee } from "@/components/cms/AssignedCommittee";
 import { usePublished } from "@/cms/CmsProvider";
+import { focalObjectClass } from "@/lib/imageFocal";
 import { useInvolvement } from "./InvolvementDialogs";
 
 const GetInvolvedSection = () => {
@@ -11,7 +14,6 @@ const GetInvolvedSection = () => {
 
   return (
     <section id="involved" className="relative overflow-hidden bg-cream py-16 sm:py-24">
-
       <div className="container relative mx-auto px-4">
         <div className="mb-12 text-center sm:mb-14">
           <Reveal direction="down">
@@ -32,29 +34,46 @@ const GetInvolvedSection = () => {
             const dialog = key.includes("give") ? "give" : key.includes("pray") ? "pray" : key.includes("go") ? "go" : null;
             return (
               <Reveal key={item.id} direction="up" delay={(i % 3) * 130} className="h-full">
-                <div className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow flex h-full flex-col rounded-2xl p-6 text-center sm:p-8">
-                  <h3 className="mb-3 font-display text-2xl font-bold text-navy">{item.title}</h3>
-                  <p className="mb-6 flex-1 leading-relaxed text-muted-foreground">{item.description}</p>
-                  {dialog ? (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        open(
-                          dialog,
-                          dialog === "give"
-                            ? { projectId: featured?.projectId, causeName: featured?.title }
-                            : undefined,
-                        )
-                      }
-                      className="rounded-lg bg-navy py-3 font-semibold text-white transition-colors hover:bg-navy-light"
-                    >
-                      {item.actionLabel}
-                    </button>
-                  ) : (
-                    <a href={item.actionHref} className="block rounded-lg bg-navy py-3 text-center font-semibold text-white transition-colors hover:bg-navy-light">
-                      {item.actionLabel}
-                    </a>
-                  )}
+                <div className="border border-navy/10 bg-white shadow-sm hover-lift hover-glow flex h-full flex-col overflow-hidden rounded-2xl text-center">
+                  {item.imageUrl ? (
+                    <div className="aspect-[16/10] overflow-hidden bg-[#EEF2F7]">
+                      <CmsImage
+                        src={item.imageUrl}
+                        alt=""
+                        width={800}
+                        height={500}
+                        className={`h-full w-full ${focalObjectClass(item.focal)}`}
+                      />
+                    </div>
+                  ) : null}
+                  <div className="flex flex-1 flex-col p-6 sm:p-8">
+                    <h3 className="mb-3 font-display text-2xl font-bold text-navy">{item.title}</h3>
+                    <p className="mb-4 flex-1 leading-relaxed text-muted-foreground">{item.description}</p>
+                    <AssignedCommittee committeeId={item.committeeId} compact className="mb-4 text-left" />
+                    {dialog ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          open(
+                            dialog,
+                            dialog === "give"
+                              ? { projectId: featured?.projectId, causeName: featured?.title }
+                              : undefined,
+                          )
+                        }
+                        className="rounded-lg bg-navy py-3 font-semibold text-white transition-colors hover:bg-navy-light"
+                      >
+                        {item.actionLabel}
+                      </button>
+                    ) : (
+                      <a
+                        href={item.actionHref}
+                        className="block rounded-lg bg-navy py-3 text-center font-semibold text-white transition-colors hover:bg-navy-light"
+                      >
+                        {item.actionLabel}
+                      </a>
+                    )}
+                  </div>
                 </div>
               </Reveal>
             );

@@ -1,35 +1,31 @@
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
-import AboutSection from "@/components/AboutSection";
-import ThemeSection from "@/components/ThemeSection";
+import ImpactStatsSection from "@/components/landing/ImpactStatsSection";
+import FeaturedCampaignsSection from "@/components/landing/FeaturedCampaignsSection";
+import WhySupportSection from "@/components/landing/WhySupportSection";
+import HowItWorksSection from "@/components/landing/HowItWorksSection";
+import TestimonialsSection from "@/components/landing/TestimonialsSection";
+import HomeCtaSection from "@/components/landing/HomeCtaSection";
 import BudgetSection from "@/components/BudgetSection";
-import GetInvolvedSection from "@/components/GetInvolvedSection";
-import CommitteeSection from "@/components/CommitteeSection";
-import CTASection from "@/components/CTASection";
 import Footer from "@/components/Footer";
 import ScrollExtras from "@/components/ScrollExtras";
 import Confetti from "@/components/Confetti";
-import { AnnouncementsSection, EventsSection, GallerySection } from "@/components/CmsSections";
+import { EventsSection } from "@/components/CmsSections";
+import CommitteeSection from "@/components/CommitteeSection";
 import { InvolvementProvider, useInvolvement } from "@/components/InvolvementDialogs";
-import { usePublished } from "@/cms/CmsProvider";
 
 const MobileStickyActions = () => {
   const { open } = useInvolvement();
-  const posters = usePublished("posters");
-  const featured = posters.find((item) => item.featured) ?? posters[0];
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-navy/10 bg-navy px-3 py-3 md:hidden">
+    <div className="fixed inset-x-3 bottom-3 z-40 rounded-card border border-[#1C1D4D]/10 bg-white/95 px-3 py-3 shadow-[0_8px_32px_rgba(21,22,58,0.14)] backdrop-blur md:hidden">
       <div className="mx-auto flex max-w-md items-center gap-2">
-        <button
-          onClick={() => open("give", { projectId: featured?.projectId, causeName: featured?.title || "the Mission" })}
-          className="flex-1 rounded-lg bg-gold px-4 py-2.5 text-sm font-semibold text-navy"
-        >
-          Support
+        <button type="button" onClick={() => open("give", { mode: "general" })} className="btn-gold flex-1 text-sm">
+          Give Now
         </button>
-        <a href="#involved" className="flex-1 rounded-lg border border-white/20 px-4 py-2.5 text-center text-sm font-semibold text-white">
-          Join
-        </a>
+        <button type="button" onClick={() => open("pray")} className="btn-secondary flex-1 text-sm">
+          Prayer
+        </button>
       </div>
     </div>
   );
@@ -37,18 +33,18 @@ const MobileStickyActions = () => {
 
 const Index = () => (
   <InvolvementProvider>
-    <div className="min-h-screen overflow-x-hidden pb-24 md:pb-0">
+    <div className="min-h-screen overflow-x-hidden bg-page pb-28 md:pb-0">
       <Navbar />
       <HeroSection />
-      <AboutSection />
-      <ThemeSection />
-      <AnnouncementsSection />
+      <ImpactStatsSection />
+      <FeaturedCampaignsSection />
+      <WhySupportSection />
+      <HowItWorksSection />
       <EventsSection />
-      <BudgetSection />
-      <GetInvolvedSection />
       <CommitteeSection />
-      <GallerySection />
-      <CTASection />
+      <BudgetSection />
+      <TestimonialsSection />
+      <HomeCtaSection />
       <Footer />
       <MobileStickyActions />
       <ScrollExtras />

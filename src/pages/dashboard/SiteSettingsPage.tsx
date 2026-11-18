@@ -22,13 +22,16 @@ const SiteSettingsPage = () => {
     <form onSubmit={save} className="max-w-3xl space-y-4">
       <h1 className="font-display text-3xl font-bold text-navy">Site settings</h1>
       <p className="text-sm text-muted-foreground">Hero, about, CTA, and footer copy used across the public website.</p>
+      <p className="rounded-lg border border-navy/10 bg-cream/60 p-3 text-sm text-muted-foreground">
+        Homepage hero copy and image card are managed under{" "}
+        <a href="/dashboard/homepage" className="font-medium text-navy underline-offset-2 hover:underline">
+          Homepage
+        </a>{" "}
+        (Hero Content + Homepage Highlights).
+      </p>
       {[
         ["churchName", "Church name"],
         ["tagline", "Tagline"],
-        ["heroEyebrow", "Hero eyebrow"],
-        ["heroTitle", "Hero title"],
-        ["heroSubtitle", "Hero subtitle"],
-        ["heroMeta", "Hero meta line"],
         ["countdownDate", "Countdown date"],
         ["aboutEyebrow", "About eyebrow"],
         ["aboutTitle", "About title"],
@@ -59,14 +62,6 @@ const SiteSettingsPage = () => {
         <Label>Footer blurb</Label>
         <Textarea className="mt-1.5" value={form.footerBlurb} onChange={(e) => set("footerBlurb", e.target.value)} />
       </div>
-      <ImageField
-        label="Default hero image (only used when no hero slide is published)"
-        value={form.heroImageUrl}
-        onChange={(heroImageUrl) => setForm({ ...form, heroImageUrl })}
-      />
-      <p className="text-sm text-muted-foreground">
-        Published hero slides take priority. This image appears only when no published hero slide has an image.
-      </p>
       <ImageField label="CTA background" value={form.ctaImageUrl} onChange={(ctaImageUrl) => setForm({ ...form, ctaImageUrl })} />
       <Button type="submit" className="bg-navy text-white hover:bg-navy-light">Save settings</Button>
     </form>

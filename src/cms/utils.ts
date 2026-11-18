@@ -10,6 +10,10 @@ export function cacheHeroSlides(slides: CmsState["slides"]) {
       .sort((a, b) => a.sortOrder - b.sortOrder)
       .map((slide) => ({
         src: slide.imageUrl,
+        title: slide.title || undefined,
+        subtitle: slide.subtitle || slide.caption || undefined,
+        buttonText: slide.buttonText || undefined,
+        buttonLink: slide.buttonLink || undefined,
         caption: slide.caption || undefined,
         focal: slide.focal ?? "center",
         sortOrder: slide.sortOrder,
@@ -184,6 +188,7 @@ export function mergeCmsState(existing: Partial<CmsState> | null, seed: CmsState
     events: existing.events?.length ? existing.events : seed.events,
     gallery: Array.isArray(existing.gallery) ? existing.gallery : seed.gallery,
     ministries: mergeByTitle(existing.ministries, seed.ministries),
+    givingCategories: mergeByTitle(existing.givingCategories, seed.givingCategories),
     users: existing.users?.length ? existing.users : seed.users,
   };
 }

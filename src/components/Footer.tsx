@@ -1,63 +1,144 @@
-import { Mail, User } from "lucide-react";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { Link } from "react-router-dom";
-import Reveal from "@/components/Reveal";
+import { useInvolvement } from "@/components/InvolvementDialogs";
 import sdaLogo from "@/assets/sda-logo.jpg";
 import { useCms } from "@/cms/CmsProvider";
 
 const Footer = () => {
   const { state } = useCms();
-  const contacts = [
-    { label: "Mission Chairman", name: state.site.chairmanName, value: state.site.chairmanPhone, href: `tel:${state.site.chairmanPhone.replace(/\s/g, "")}` },
-    { label: "Elder in Charge", name: state.site.elderName, value: state.site.elderPhone, href: `tel:${state.site.elderPhone.replace(/\s/g, "")}` },
-    { label: "Email", name: "Get in touch", value: state.site.contactEmail, href: `mailto:${state.site.contactEmail}` },
+  const { open } = useInvolvement();
+
+  const quickLinks = [
+    { label: "Home", href: "/#home" },
+    { label: "About", href: "/#about" },
+    { label: "Events", href: "/#events" },
+    { label: "Support", href: "/#campaigns" },
   ];
 
   return (
-    <footer className="relative overflow-hidden border-t border-gold/10 bg-navy py-14">
+    <footer className="relative overflow-hidden bg-footer text-white">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent" aria-hidden />
 
-      <div className="container relative mx-auto px-4">
-        <div className="mx-auto mb-10 grid max-w-5xl gap-6 md:grid-cols-2">
-          <Reveal direction="left" className="h-full">
-            <div className="h-full p-6">
-              <div className="mb-4 flex items-center gap-4">
-                <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 border-gold bg-white">
-                  <img src={sdaLogo} alt="SDA logo" loading="lazy" decoding="async" width={64} height={64} className="h-full w-full object-cover" />
-                </div>
-                <div>
-                  <p className="font-display text-2xl font-bold text-primary-foreground">
-                    {state.site.churchName} <span className="text-gold">Mission 2026</span>
-                  </p>
-                  <p className="text-xs text-primary-foreground/50">{state.site.tagline}</p>
-                </div>
+      <div className="container mx-auto px-4 py-14 sm:py-16">
+        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+          {/* Column 1 — Brand */}
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 shrink-0 overflow-hidden rounded-full border-2 border-gold/80 bg-white">
+                <img
+                  src={sdaLogo}
+                  alt="ZUSDA logo"
+                  loading="lazy"
+                  decoding="async"
+                  width={48}
+                  height={48}
+                  className="h-full w-full object-cover"
+                />
               </div>
-              <p className="text-sm italic text-primary-foreground/50">{state.site.footerBlurb}</p>
+              <div>
+                <p className="font-display text-xl font-bold text-white">
+                  {state.site.churchName}
+                </p>
+                <p className="text-xs text-white/65">{state.site.tagline}</p>
+              </div>
             </div>
-          </Reveal>
-          <Reveal direction="right" delay={120} className="h-full">
-            <div className="h-full p-6">
-              <p className="mb-4 text-xs font-medium tracking-wide text-gold">Contact</p>
-              <ul className="space-y-4">
-                {contacts.map((item) => (
-                  <li key={item.value}>
-                    <a href={item.href} className="group flex items-start gap-3 transition-transform duration-300 hover:translate-x-1">
-                      {item.label === "Email" ? <Mail className="mt-0.5 text-gold/70" size={16} /> : <User className="mt-0.5 text-gold/70" size={16} />}
-                      <div>
-                        <p className="text-xs text-primary-foreground/50">{item.label}</p>
-                        <p className="text-sm font-medium text-primary-foreground/90 transition-colors group-hover:text-gold">{item.name}</p>
-                        <p className="text-sm text-primary-foreground/70">{item.value}</p>
-                      </div>
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Reveal>
-        </div>
-        <div className="border-t border-gold/10 pt-6 text-center">
-          <p className="text-xs text-primary-foreground/40">© 2026 ZUSDA Evangelical Mission. All rights reserved.</p>
-          <div className="mt-3">
-            <Link to="/login" className="text-xs text-primary-foreground/50 transition-colors hover:text-gold">Login</Link>
+            <p className="mt-4 text-sm leading-relaxed text-white/75">
+              {state.site.footerBlurb ||
+                "Supporting God’s work through faith, transparent giving, and mission service."}
+            </p>
           </div>
+
+          {/* Column 2 — Quick Links */}
+          <div>
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-gold">Quick Links</p>
+            <ul className="space-y-3">
+              {quickLinks.map((link) => (
+                <li key={link.label}>
+                  <a
+                    href={link.href}
+                    className="inline-flex min-h-11 items-center text-sm text-white/80 transition hover:text-gold"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Column 3 — Get Involved */}
+          <div>
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-gold">Get Involved</p>
+            <ul className="space-y-3">
+              <li>
+                <button
+                  type="button"
+                  onClick={() => open("give", { mode: "general" })}
+                  className="inline-flex min-h-11 items-center text-sm text-white/80 transition hover:text-gold"
+                >
+                  Give
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  onClick={() => open("pray")}
+                  className="inline-flex min-h-11 items-center text-sm text-white/80 transition hover:text-gold"
+                >
+                  Offer Prayer
+                </button>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${state.site.contactEmail}`}
+                  className="inline-flex min-h-11 items-center text-sm text-white/80 transition hover:text-gold"
+                >
+                  Contact Us
+                </a>
+              </li>
+            </ul>
+          </div>
+
+          {/* Column 4 — Contact */}
+          <div>
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-gold">Contact</p>
+            <ul className="space-y-4">
+              <li>
+                <a
+                  href={`tel:${state.site.chairmanPhone.replace(/\s/g, "")}`}
+                  className="group flex min-h-11 items-start gap-3 text-sm text-white/80 transition hover:text-gold"
+                >
+                  <Phone className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden />
+                  <span>
+                    <span className="block text-xs text-white/50">{state.site.chairmanName}</span>
+                    {state.site.chairmanPhone}
+                  </span>
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${state.site.contactEmail}`}
+                  className="group flex min-h-11 items-start gap-3 text-sm text-white/80 transition hover:text-gold"
+                >
+                  <Mail className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden />
+                  <span>{state.site.contactEmail}</span>
+                </a>
+              </li>
+              <li className="flex items-start gap-3 text-sm text-white/80">
+                <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden />
+                <span>Kinamba, Naivasha · Zetech University SDA Church</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="mt-12 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-center sm:flex-row sm:text-left">
+          <div>
+            <p className="text-xs text-white/55">© {new Date().getFullYear()} ZUSDA Fundraiser Platform</p>
+            <p className="mt-1 text-xs text-white/45">Designed for SDA Zetech University Church</p>
+          </div>
+          <Link to="/login" className="inline-flex min-h-11 items-center text-xs font-medium text-white/55 transition hover:text-gold">
+            Login
+          </Link>
         </div>
       </div>
     </footer>

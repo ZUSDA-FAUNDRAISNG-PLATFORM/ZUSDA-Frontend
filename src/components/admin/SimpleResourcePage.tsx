@@ -67,6 +67,17 @@ export function SimpleResourcePage<K extends CmsCollection>({
         savedItem[field.key] = field.fallbackValue;
       }
     });
+    // Committee assignment select uses string values in the form; persist as number | null.
+    if ("committeeId" in savedItem) {
+      const raw = savedItem.committeeId;
+      savedItem.committeeId =
+        raw === "" || raw == null || raw === undefined
+          ? null
+          : Number(raw);
+      if (typeof savedItem.committeeId === "number" && !Number.isFinite(savedItem.committeeId)) {
+        savedItem.committeeId = null;
+      }
+    }
     upsertItem(collection, savedItem as never);
     setEditing(null);
   };
@@ -149,7 +160,7 @@ export function SimpleResourcePage<K extends CmsCollection>({
           ))}
           <label className="flex min-h-11 items-center gap-2 text-sm">
             <input type="checkbox" checked={Boolean(editing.published)} onChange={(e) => setEditing({ ...editing, published: e.target.checked })} />
-            Published
+            Visible on website
           </label>
           {validationError ? <p role="alert" className="text-sm text-destructive md:col-span-2">{validationError}</p> : null}
           <div className="flex gap-2 md:col-span-2">
@@ -184,7 +195,7 @@ export function SimpleResourcePage<K extends CmsCollection>({
                     </span>
                   ) : null}
                 </div>
-                <p className="text-xs text-navy/50">{item.published ? "Published" : "Unpublished"}</p>
+                <p className="text-xs text-navy/50">{item.published ? "Visible" : "Hidden"} · Display position {item.sortOrder}</p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -192,7 +203,7 @@ export function SimpleResourcePage<K extends CmsCollection>({
               <Button size="sm" variant="outline" onClick={() => move(item.id, -1)}>Up</Button>
               <Button size="sm" variant="outline" onClick={() => move(item.id, 1)}>Down</Button>
               <Button size="sm" variant="outline" onClick={() => upsertItem(collection, { ...item, published: !item.published })}>
-                {item.published ? "Unpublish" : "Publish"}
+                {item.published ? "Hide" : "Make Visible"}
               </Button>
               <Button size="sm" variant="destructive" onClick={() => deleteItem(collection, item.id)}>Delete</Button>
             </div>

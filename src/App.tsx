@@ -8,8 +8,10 @@ import { CmsProvider } from "@/cms/CmsProvider";
 import { AuthProvider } from "@/cms/AuthProvider";
 import { RequireAuth } from "@/components/admin/RequireAuth";
 import Index from "./pages/Index.tsx";
+import Give from "./pages/Give.tsx";
 import Login from "./pages/Login.tsx";
 import Register from "./pages/Register.tsx";
+import Contact from "./pages/Contact.tsx";
 import MemberAccount from "./pages/MemberAccount.tsx";
 import DashboardLayout from "./pages/dashboard/DashboardLayout.tsx";
 import Overview from "./pages/dashboard/Overview.tsx";
@@ -17,7 +19,16 @@ import PostersPage from "./pages/dashboard/PostersPage.tsx";
 import SliderPage from "./pages/dashboard/SliderPage.tsx";
 import ValuesPage from "./pages/dashboard/ValuesPage.tsx";
 import CommitteePage from "./pages/dashboard/CommitteePage.tsx";
-import { AnnouncementsPage, EventsPage, GalleryPage, MinistriesPage } from "./pages/dashboard/ContentPages.tsx";
+import HomepageHubPage from "./pages/dashboard/homepage/HomepageHubPage.tsx";
+import HeroContentPage from "./pages/dashboard/homepage/HeroContentPage.tsx";
+import HomepageHighlightsPage from "./pages/dashboard/homepage/HomepageHighlightsPage.tsx";
+import {
+  AnnouncementsPage,
+  EventsPage,
+  GalleryPage,
+  GivingCategoriesPage,
+  MinistriesPage,
+} from "./pages/dashboard/ContentPages.tsx";
 import SiteSettingsPage from "./pages/dashboard/SiteSettingsPage.tsx";
 import BudgetSettingsPage from "./pages/dashboard/BudgetSettingsPage.tsx";
 import UsersPage from "./pages/dashboard/UsersPage.tsx";
@@ -43,8 +54,10 @@ const App = () => (
             <BrowserRouter>
               <Routes>
                 <Route path="/" element={<Index />} />
+                <Route path="/give" element={<Give />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
+                <Route path="/contact" element={<Contact />} />
                 <Route
                   path="/account"
                   element={
@@ -62,8 +75,11 @@ const App = () => (
                   }
                 >
                   <Route index element={<Overview />} />
+                  <Route path="homepage" element={<HomepageHubPage />} />
+                  <Route path="homepage/hero" element={<HeroContentPage />} />
+                  <Route path="homepage/highlights" element={<HomepageHighlightsPage />} />
                   <Route path="posters" element={<PostersPage />} />
-                  <Route path="slider" element={<SliderPage />} />
+                  <Route path="slider" element={<Navigate to="/dashboard/homepage/highlights" replace />} />
                   <Route path="scripture-cards" element={<SliderPage placement="scripture" />} />
                   <Route path="values" element={<ValuesPage />} />
                   <Route path="committee" element={<CommitteePage />} />
@@ -71,6 +87,7 @@ const App = () => (
                   <Route path="events" element={<EventsPage />} />
                   <Route path="gallery" element={<GalleryPage />} />
                   <Route path="ministries" element={<MinistriesPage />} />
+                  <Route path="giving-categories" element={<GivingCategoriesPage />} />
                   <Route path="budget" element={<BudgetSettingsPage />} />
                   <Route path="settings" element={<SiteSettingsPage />} />
                   <Route path="users" element={<UsersPage />} />

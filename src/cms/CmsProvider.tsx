@@ -18,9 +18,16 @@ const FALLBACK_CMS_STATE: CmsState = {
     tagline: "",
     heroEyebrow: "",
     heroTitle: "",
+    heroTitleHighlight: "",
     heroSubtitle: "",
     heroMeta: "",
     heroImageUrl: "",
+    heroPrimaryButtonText: "",
+    heroPrimaryButtonLink: "",
+    heroSecondaryButtonText: "",
+    heroSecondaryButtonLink: "",
+    heroExploreLinkText: "",
+    heroExploreLink: "",
     countdownDate: "",
     aboutEyebrow: "",
     aboutTitle: "",
@@ -42,15 +49,18 @@ const FALLBACK_CMS_STATE: CmsState = {
     paybill: "",
     paybillAccount: "",
     wordOfFaith: "",
+    missionCommitteeId: null,
   },
   posters: [],
   slides: [],
   values: [],
+  committees: [],
   committee: [],
   announcements: [],
   events: [],
   gallery: [],
   ministries: [],
+  givingCategories: [],
   users: [],
 };
 
@@ -148,7 +158,17 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       remote = repairRemote(remote, seed);
       cacheHeroSlides(remote.slides);
       if (remote.site) {
-        apply((current) => ({ ...current, ...remote, site: remote.site as SiteSettings, users: current.users }) as CmsState);
+        apply((current) =>
+          ({
+            ...current,
+            ...remote,
+            committees: Array.isArray((remote as CmsState).committees)
+              ? (remote as CmsState).committees
+              : current.committees,
+            site: remote.site as SiteSettings,
+            users: current.users,
+          }) as CmsState,
+        );
       } else {
         apply((current) => ({ ...current, slides: remote.slides }) as CmsState);
       }
@@ -182,7 +202,17 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       const fresh = repairRemote(remote, seed);
       cacheHeroSlides(fresh.slides);
       if (fresh.site) {
-        apply((current) => ({ ...current, ...fresh, site: fresh.site as SiteSettings, users: current.users }) as CmsState);
+        apply((current) =>
+          ({
+            ...current,
+            ...fresh,
+            committees: Array.isArray((fresh as CmsState).committees)
+              ? (fresh as CmsState).committees
+              : current.committees,
+            site: fresh.site as SiteSettings,
+            users: current.users,
+          }) as CmsState,
+        );
       } else {
         apply((current) => ({ ...current, slides: fresh.slides }) as CmsState);
       }
@@ -246,14 +276,31 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         if (Number.isNaN(new Date(mergedSite.countdownDate).getTime())) {
           mergedSite.countdownDate = seed.site.countdownDate;
         }
-        const next = { ...seed, ...base, site: mergedSite, users } as CmsState;
+        const next = { ...seed, ...base, site: { ...seed.site, ...mergedSite }, users } as CmsState;
         const fixPhotos = (remoteList: CmsState["committee"], seedList: CmsState["committee"]) =>
           remoteList.map((item) => {
             if (typeof item.photoUrl !== "string" || !item.photoUrl.startsWith("/assets/")) return item;
             const match = seedList.find((x) => x.name === item.name);
             return match ? { ...item, photoUrl: match.photoUrl } : item;
           });
-        next.committee = fixPhotos(next.committee, seed.committee);
+        next.committee = fixPhotos(next.committee ?? [], seed.committee);
+        if (!Array.isArray(next.committees) || next.committees.length === 0) {
+          next.committees = seed.committees;
+        }
+        if (!Array.isArray(next.givingCategories) || next.givingCategories.length === 0) {
+          next.givingCategories = seed.givingCategories;
+        }
+        // Fill newly added hero content keys from seed when missing in older caches.
+        if (!next.site.heroTitleHighlight) next.site.heroTitleHighlight = seed.site.heroTitleHighlight;
+        if (!next.site.heroPrimaryButtonText) next.site.heroPrimaryButtonText = seed.site.heroPrimaryButtonText;
+        if (!next.site.heroPrimaryButtonLink) next.site.heroPrimaryButtonLink = seed.site.heroPrimaryButtonLink;
+        if (!next.site.heroSecondaryButtonText) next.site.heroSecondaryButtonText = seed.site.heroSecondaryButtonText;
+        if (!next.site.heroSecondaryButtonLink) next.site.heroSecondaryButtonLink = seed.site.heroSecondaryButtonLink;
+        if (!next.site.heroExploreLinkText) next.site.heroExploreLinkText = seed.site.heroExploreLinkText;
+        if (!next.site.heroExploreLink) next.site.heroExploreLink = seed.site.heroExploreLink;
+        if (next.site.missionCommitteeId === undefined) {
+          next.site.missionCommitteeId = seed.site.missionCommitteeId ?? null;
+        }
         return next;
       };
 

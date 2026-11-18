@@ -204,12 +204,7 @@ const BudgetSection = () => {
   const causeName = featured?.title || activeCollection?.name || "the Mission";
 
   return (
-    <section id="budget" className="relative scroll-mt-28 overflow-hidden bg-navy py-16 sm:py-20">
-      <div aria-hidden className="pointer-events-none absolute inset-0 z-0">
-        <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-gold/25 blur-3xl" />
-        <div className="absolute right-0 top-1/3 h-96 w-96 rounded-full bg-emerald-500/20 blur-3xl" />
-        <div className="absolute bottom-0 left-1/3 h-72 w-72 rounded-full bg-sky-500/20 blur-3xl" />
-      </div>
+    <section id="budget" className="relative scroll-mt-28 bg-section-alt py-16 sm:py-20">
       <div className="container relative z-10 mx-auto px-4" ref={ref}>
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -217,11 +212,11 @@ const BudgetSection = () => {
           className="mx-auto max-w-6xl"
         >
           <div className="mx-auto mb-8 max-w-3xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 text-xs font-medium text-gold">
+            <div className="mb-4 inline-flex items-center gap-2 text-xs font-semibold text-gold-dark">
               <TrendingUp size={14} />
               Live Mission Budget
             </div>
-            <h2 className="mb-3 mt-4 font-display text-3xl font-bold text-primary-foreground md:text-4xl">
+            <h2 className="mb-3 mt-4 font-display text-3xl font-bold text-heading md:text-4xl">
               {loading ? (
                 <span className="inline-flex items-center gap-2">
                   <Loader2 className="animate-spin" size={20} />
@@ -229,21 +224,21 @@ const BudgetSection = () => {
                 </span>
               ) : (
                 <div className="flex flex-wrap items-center justify-center gap-3">
-                  <span className="text-gold">KSH</span>
+                  <span className="text-gold-dark">KES</span>
                   <CountUpValue value={raised} />
                   {pulseAmount ? (
                     <motion.span
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
-                      className="rounded-full border border-gold/20 bg-gold/10 px-3 py-1 text-sm font-semibold text-gold"
+                      className="rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-sm font-semibold text-gold-dark"
                     >
-                      +KSH {pulseAmount.toLocaleString("en-KE")}
+                      +KES {pulseAmount.toLocaleString("en-KE")}
                     </motion.span>
                   ) : null}
                 </div>
               )}
             </h2>
-            <p className="text-lg text-primary-foreground/70">
+            <p className="text-lg text-body">
               {progressPercent}% of the {targetLabel} target has already been covered
             </p>
           </div>
@@ -253,31 +248,31 @@ const BudgetSection = () => {
               initial={{ opacity: 0, scale: 0.98 }}
               animate={inView ? { opacity: 1, scale: 1 } : {}}
               transition={{ delay: 0.1 }}
-              className="glass-card rounded-xl p-6"
+              className="rounded-card border border-[#1C1D4D]/8 bg-white p-6 shadow-[0_4px_20px_rgba(21,22,58,0.06)]"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                  <p className="text-sm font-medium text-gold">Campaign Progress</p>
-                  <p className="mt-2 text-sm text-primary-foreground/70">Updates automatically as gifts come in and as the goal changes.</p>
+                  <p className="text-sm font-semibold text-gold-dark">Campaign Progress</p>
+                  <p className="mt-2 text-sm text-body">Updates automatically as gifts come in and as the goal changes.</p>
                 </div>
-                <div className="rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-gold">Live</div>
+                <div className="rounded-md border border-navy/10 bg-navy/[0.04] px-3 py-1 text-[11px] font-semibold text-navy">Live</div>
               </div>
 
               <div className="mt-6">
                 <LiquidBar percent={progressPercent} />
               </div>
 
-              <div className="mt-4 flex items-center justify-between text-sm text-primary-foreground/70">
-                <span className="font-semibold text-gold">{progressPercent}% funded</span>
-                <span>KSH {remaining.toLocaleString("en-KE")} remaining</span>
+              <div className="mt-4 flex items-center justify-between text-sm text-body">
+                <span className="font-semibold text-gold-dark">{progressPercent}% funded</span>
+                <span>KES {remaining.toLocaleString("en-KE")} remaining</span>
               </div>
 
               <div className="mt-5 flex flex-wrap items-center gap-2">
                 {[0, ...MILESTONE_STEPS].map((step) => (
                   <span
                     key={step}
-                    className={`rounded-md px-3 py-1 text-[11px] font-medium ${progressPercent >= step ? "border border-gold/30 bg-gold/10 text-gold" : "border border-white/10 text-white/50"}`}
-                    style={progressPercent >= step ? { color: `hsl(${progressHue(step)} 80% 60%)` } : undefined}
+                    className={`rounded-md px-3 py-1 text-[11px] font-medium ${progressPercent >= step ? "border border-gold/30 bg-gold/10 text-gold-dark" : "border border-navy/10 text-slate-400"}`}
+                    style={progressPercent >= step ? { color: `hsl(${progressHue(step)} 70% 35%)` } : undefined}
                   >
                     {step}%
                   </span>
@@ -285,21 +280,21 @@ const BudgetSection = () => {
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="glass-card rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-gold">
+                <div className="rounded-xl border border-navy/8 bg-[#F7F8FC] p-4">
+                  <div className="flex items-center gap-2 text-gold-dark">
                     <HandCoins size={16} />
-                    <span className="text-[11px] font-medium">Raised</span>
+                    <span className="text-[11px] font-semibold">Raised</span>
                   </div>
-                  <p className="mt-2 font-display text-xl font-semibold text-primary-foreground">
-                    <CountUpValue value={raised} prefix="KSH " />
+                  <p className="mt-2 font-display text-xl font-semibold text-heading">
+                    <CountUpValue value={raised} prefix="KES " />
                   </p>
                 </div>
-                <div className="glass-card rounded-xl p-4">
-                  <div className="flex items-center gap-2 text-gold">
+                <div className="rounded-xl border border-navy/8 bg-[#F7F8FC] p-4">
+                  <div className="flex items-center gap-2 text-gold-dark">
                     <Target size={16} />
-                    <span className="text-[11px] font-medium">Goal</span>
+                    <span className="text-[11px] font-semibold">Goal</span>
                   </div>
-                  <p className="mt-2 font-display text-xl font-semibold text-primary-foreground">{targetLabel}</p>
+                  <p className="mt-2 font-display text-xl font-semibold text-heading">{targetLabel}</p>
                 </div>
               </div>
             </motion.div>
@@ -309,66 +304,66 @@ const BudgetSection = () => {
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: 0.15 }}
-                className="glass-card rounded-xl p-6 text-left"
+                className="rounded-card border border-[#1C1D4D]/8 bg-white p-6 text-left shadow-[0_4px_20px_rgba(21,22,58,0.06)]"
               >
-                <p className="mb-4 text-xs font-medium text-gold">Payment Details</p>
+                <p className="mb-4 text-xs font-semibold text-gold-dark">Payment Details</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
                   <button
                     type="button"
                     onClick={() => copy(paybill, "Paybill")}
-                    className="group rounded-xl border border-white/10 bg-navy/30 p-4 text-left transition-colors hover:bg-white/10"
+                    className="group rounded-xl border border-navy/10 bg-[#F7F8FC] p-4 text-left transition-colors hover:border-gold/40"
                   >
                     <div className="mb-1 flex items-center justify-between">
-                      <p className="text-[11px] uppercase tracking-wider text-primary-foreground/50">Paybill</p>
-                      {copiedKey === "Paybill" ? <Check className="text-green-400" size={14} /> : <Copy className="text-gold/60 group-hover:text-gold" size={14} />}
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Paybill</p>
+                      {copiedKey === "Paybill" ? <Check className="text-green-600" size={14} /> : <Copy className="text-gold-dark/70 group-hover:text-gold-dark" size={14} />}
                     </div>
-                    <p className="break-all font-display text-2xl font-bold text-primary-foreground">{paybill}</p>
+                    <p className="break-all font-display text-2xl font-bold text-heading">{paybill}</p>
                   </button>
                   <button
                     type="button"
                     onClick={() => copy(account, "Account number")}
-                    className="group rounded-xl border border-white/10 bg-navy/30 p-4 text-left transition-colors hover:bg-white/10"
+                    className="group rounded-xl border border-navy/10 bg-[#F7F8FC] p-4 text-left transition-colors hover:border-gold/40"
                   >
                     <div className="mb-1 flex items-center justify-between">
-                      <p className="text-[11px] uppercase tracking-wider text-primary-foreground/50">Account No.</p>
-                      {copiedKey === "Account number" ? <Check className="text-green-400" size={14} /> : <Copy className="text-gold/60 group-hover:text-gold" size={14} />}
+                      <p className="text-[11px] uppercase tracking-wider text-slate-500">Account No.</p>
+                      {copiedKey === "Account number" ? <Check className="text-green-600" size={14} /> : <Copy className="text-gold-dark/70 group-hover:text-gold-dark" size={14} />}
                     </div>
-                    <p className="break-all font-display text-2xl font-bold text-primary-foreground">{account}</p>
+                    <p className="break-all font-display text-2xl font-bold text-heading">{account}</p>
                   </button>
                 </div>
                 <button
                   type="button"
-                  onClick={() => open("give", { projectId: selectedProjectId, causeName })}
-                  className="hover-lift mt-4 flex w-full items-center justify-center gap-2 rounded-lg bg-gold px-4 py-3 font-semibold text-navy hover:bg-gold-light"
+                  onClick={() => open("give", { mode: "campaign", projectId: selectedProjectId, causeName })}
+                  className="mt-4 flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#fbbf24] to-[#f59e0b] px-4 py-3 font-semibold text-[#0B1F4B] transition hover:brightness-105"
                 >
                   Give Now
                   <ArrowRight size={16} />
                 </button>
-                <ShareButton title={causeName} text={`Support ${causeName} — ZUSDA Evangelical Mission 2026`} className="mt-3 w-full justify-center border-white/20 text-white hover:bg-white/10" />
+                <ShareButton title={causeName} text={`Support ${causeName} — ZUSDA Evangelical Mission 2026`} className="mt-3 w-full justify-center border-navy/15 text-navy hover:bg-navy/[0.03]" />
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, x: 16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
                 transition={{ delay: 0.2 }}
-                className="glass-card rounded-xl p-6"
+                className="rounded-card border border-[#1C1D4D]/8 bg-white p-6 shadow-[0_4px_20px_rgba(21,22,58,0.06)]"
               >
                 <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-gold">Next Milestone</p>
-                  <BadgeCheck className="text-gold" size={16} />
+                  <p className="text-xs font-semibold text-gold-dark">Next Milestone</p>
+                  <BadgeCheck className="text-gold-dark" size={16} />
                 </div>
                 <div className="mt-4 flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border border-gold/20 bg-navy/30 text-xl font-semibold text-gold">
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full border border-gold/30 bg-gold/10 text-xl font-semibold text-gold-dark">
                     {milestonePercent}%
                   </div>
                   <div>
-                    <p className="text-xl font-semibold text-primary-foreground">
+                    <p className="text-xl font-semibold text-heading">
                       {progressPercent >= 100 ? "Goal reached" : `${milestonePercent}% of target`}
                     </p>
-                    <p className="mt-1 text-sm text-primary-foreground/70">
+                    <p className="mt-1 text-sm text-body">
                       {progressPercent >= 100
                         ? "Thank you. The mission goal has been met."
-                        : `KSH ${milestoneAmount.toLocaleString("en-KE")} to the next milestone.`}
+                        : `KES ${milestoneAmount.toLocaleString("en-KE")} to the next milestone.`}
                     </p>
                   </div>
                 </div>
@@ -377,10 +372,10 @@ const BudgetSection = () => {
           </div>
 
           <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <div className="glass-card rounded-xl p-4 text-left">
+            <div className="rounded-card border border-[#1C1D4D]/8 bg-white p-4 text-left shadow-[0_4px_20px_rgba(21,22,58,0.06)] sm:p-5">
               <div className="mb-4 flex items-center justify-between">
-                <p className="text-xs font-medium text-gold">Recent Contributions</p>
-                <span className="rounded-md border border-white/10 px-3 py-1 text-[11px] font-medium text-gold">Live</span>
+                <p className="text-xs font-semibold text-gold-dark">Recent Contributions</p>
+                <span className="rounded-md border border-navy/10 bg-navy/[0.04] px-3 py-1 text-[11px] font-semibold text-navy">Live</span>
               </div>
               {recent.length > 0 ? (
                 <div className="space-y-2">
@@ -392,12 +387,12 @@ const BudgetSection = () => {
                         initial={{ opacity: 0, scale: 0.85, y: -10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.9 }}
-                        className={`glass-card rounded-xl py-4 pl-5 pr-4 ${index === 0 ? "border-gold/30 bg-gold/5" : ""}`}
+                        className={`rounded-xl border border-navy/8 bg-[#F7F8FC] py-4 pl-5 pr-4 ${index === 0 ? "border-gold/40 bg-gold/5" : ""}`}
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <p className="font-mono text-sm text-gold">{item.hash}</p>
-                          <p className="font-display text-lg font-bold text-primary-foreground">
-                            KSH {item.amount.toLocaleString("en-KE")}
+                          <p className="font-mono text-sm text-gold-dark">{item.hash}</p>
+                          <p className="font-display text-lg font-bold text-heading">
+                            KES {item.amount.toLocaleString("en-KE")}
                           </p>
                         </div>
                       </motion.div>
@@ -405,7 +400,7 @@ const BudgetSection = () => {
                   </AnimatePresence>
                 </div>
               ) : (
-                <p className="text-sm text-primary-foreground/70">Be the first to make a kingdom impact today.</p>
+                <p className="text-sm text-body">Be the first to make a kingdom impact today.</p>
               )}
             </div>
 
@@ -413,38 +408,38 @@ const BudgetSection = () => {
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                className="glass-card rounded-xl p-6"
+                className="rounded-card border border-[#1C1D4D]/8 bg-white p-6 shadow-[0_4px_20px_rgba(21,22,58,0.06)]"
               >
-                <div className="flex items-center gap-2 text-gold">
+                <div className="flex items-center gap-2 text-gold-dark">
                   <HeartHandshake size={16} />
-                  <p className="text-xs font-medium">A Word of Faith</p>
+                  <p className="text-xs font-semibold">A Word of Faith</p>
                 </div>
-                <p className="mt-4 font-display text-2xl leading-relaxed text-primary-foreground">“{wordOfFaith}”</p>
+                <p className="mt-4 font-display text-2xl leading-relaxed text-heading">“{wordOfFaith}”</p>
               </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={inView ? { opacity: 1, y: 0 } : {}}
-                className="glass-card rounded-xl p-6"
+                className="rounded-card border border-[#1C1D4D]/8 bg-white p-6 shadow-[0_4px_20px_rgba(21,22,58,0.06)]"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-medium text-gold">Open tabs</p>
+                    <p className="text-xs font-semibold text-gold-dark">Open tabs</p>
                     <motion.p
                       key={viewerCount}
                       initial={{ opacity: 0, y: 8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
-                      className="mt-2 text-3xl font-semibold text-primary-foreground"
+                      className="mt-2 text-3xl font-semibold text-heading"
                     >
                       {viewerCount}
                     </motion.p>
                   </div>
-                  <div className="rounded-full border border-gold/20 bg-gold/10 p-3 text-gold">
+                  <div className="rounded-full border border-gold/30 bg-gold/10 p-3 text-gold-dark">
                     <Globe2 size={18} />
                   </div>
                 </div>
-                <div className="mt-4 flex items-center gap-2 text-sm text-primary-foreground/70">
-                  <Clock3 size={14} className="text-gold" />
+                <div className="mt-4 flex items-center gap-2 text-sm text-body">
+                  <Clock3 size={14} className="text-gold-dark" />
                   <span>Across this browser</span>
                 </div>
               </motion.div>

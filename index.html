@@ -43,8 +43,16 @@
       // Ignore invalid or unavailable local hero cache.
     }
   </script>
-  <meta name="theme-color" content="#0f172a">
+  <meta name="theme-color" content="#F7F8FC">
   <link rel="apple-touch-icon" href="/icon-192.png">
+  <style>
+    /* Prevent flash before React/CSS mounts — match page background */
+    html, body, #root {
+      background-color: #F7F8FC;
+      margin: 0;
+      min-height: 100%;
+    }
+  </style>
 </head>
 
   <body>

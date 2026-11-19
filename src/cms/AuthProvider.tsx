@@ -14,13 +14,8 @@ import {
   getStoredToken,
   setStoredToken,
 } from "@/api/client";
-import {
-  LOCAL_ADMIN_TOKEN,
-  notifyAdminSessionChanged,
-} from "@/lib/testAdmin";
-import type { CmsUser, UserRole } from "./types";
-import { useCms } from "./CmsProvider";
-import { hashPassword } from "./utils";
+import { notifyAdminSessionChanged } from "@/lib/adminSession";
+import type { UserRole } from "./types";
 
 export interface AuthUser {
   id: number;
@@ -34,27 +29,11 @@ interface AuthContextValue {
   user: AuthUser | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<AuthUser>;
-  register: (input: {
-    name: string;
-    email: string;
-    username: string;
-    password: string;
-  }) => Promise<AuthUser>;
   logout: () => void;
   isAdmin: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-function toAuthUser(user: CmsUser): AuthUser {
-  return {
-    id: user.id,
-    name: user.name,
-    email: user.email,
-    username: user.username,
-    role: user.role,
-  };
-}
 
 /**
  * Normalize backend roles without destroying
@@ -91,8 +70,6 @@ export function AuthProvider({
 }: {
   children: ReactNode;
 }) {
-  const { state, addUser } = useCms();
-
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -104,143 +81,68 @@ export function AuthProvider({
       return;
     }
 
-    if (!token.startsWith(LOCAL_ADMIN_TOKEN)) {
-      let cancelled = false;
+    let cancelled = false;
 
-      apiGet<AuthUser>("/auth/me")
-        .then((me) => {
-          if (!cancelled) {
-            setUser({
-              ...me,
-              role: normalizeRole(me.role),
-            });
-          }
-        })
-        .catch((err) => {
-          if (cancelled) return;
+    apiGet<AuthUser>("/auth/me")
+      .then((me) => {
+        if (!cancelled) {
+          setUser({
+            ...me,
+            name: me.name || me.username,
+            role: normalizeRole(me.role),
+          });
+        }
+      })
+      .catch((err) => {
+        if (cancelled) return;
 
-          if (
-            err instanceof ApiError &&
-            (err.status === 401 || err.status === 422)
-          ) {
-            setStoredToken(null);
-          }
+        if (
+          err instanceof ApiError &&
+          (err.status === 401 || err.status === 422)
+        ) {
+          setStoredToken(null);
+        }
 
-          setUser(null);
-        })
-        .finally(() => {
-          if (!cancelled) {
-            setLoading(false);
-          }
-        });
+        setUser(null);
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      });
 
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const localId = Number(
-      token.replace(`${LOCAL_ADMIN_TOKEN}:`, "")
-    );
-
-    const match =
-      state.users.find((item) => item.id === localId) ??
-      (token === LOCAL_ADMIN_TOKEN
-        ? state.users.find((item) => item.role === "admin")
-        : null);
-
-    setUser(match ? toAuthUser(match) : null);
-    setLoading(false);
-  }, [state.users]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const login = async (
     username: string,
     password: string
   ) => {
-    try {
-      const payload = await apiPost<{
-        access_token: string;
-        admin?: AuthUser;
-        user?: AuthUser;
-      }>("/auth/login", {
-        username,
-        password,
-      });
-
-      setStoredToken(payload.access_token);
-
-      const next = payload.user || payload.admin;
-
-      if (next) {
-        const normalized = {
-          ...next,
-          role: normalizeRole(next.role),
-        };
-
-        setUser(normalized);
-        notifyAdminSessionChanged();
-
-        return normalized;
-      }
-    } catch {
-      // local CMS auth
-    }
-
-    const hash = await hashPassword(password);
-
-    const match = state.users.find(
-      (item) =>
-        item.username.toLowerCase() ===
-          username.trim().toLowerCase() &&
-        item.passwordHash === hash,
-    );
-
-    if (!match) {
-      throw new Error("Invalid username or password");
-    }
-
-    setStoredToken(`${LOCAL_ADMIN_TOKEN}:${match.id}`);
-
-    const next = toAuthUser(match);
-
-    setUser(next);
-    notifyAdminSessionChanged();
-
-    return next;
-  };
-
-  const register = async (input: {
-    name: string;
-    email: string;
-    username: string;
-    password: string;
-  }) => {
-    if (
-      state.users.some(
-        (item) =>
-          item.username.toLowerCase() ===
-          input.username.trim().toLowerCase(),
-      )
-    ) {
-      throw new Error("That username is already taken");
-    }
-
-    const created = addUser({
-      name: input.name.trim(),
-      email: input.email.trim(),
-      username: input.username.trim(),
-      passwordHash: await hashPassword(input.password),
-      role: "member",
+    const payload = await apiPost<{
+      access_token: string;
+      admin?: Omit<AuthUser, "name"> & { name?: string };
+      user?: AuthUser;
+    }>("/auth/login", {
+      username,
+      password,
     });
 
-    setStoredToken(`${LOCAL_ADMIN_TOKEN}:${created.id}`);
+    const next = payload.user || payload.admin;
+    if (!payload.access_token || !next) {
+      throw new Error("The server returned an invalid login response.");
+    }
 
-    const next = toAuthUser(created);
-
-    setUser(next);
+    setStoredToken(payload.access_token);
+    const normalized = {
+      ...next,
+      name: next.name || next.username,
+      role: normalizeRole(next.role),
+    };
+    setUser(normalized);
     notifyAdminSessionChanged();
-
-    return next;
+    return normalized;
   };
 
   const logout = () => {
@@ -255,11 +157,10 @@ export function AuthProvider({
       user,
       loading,
       login,
-      register,
       logout,
       isAdmin: isAdminRole(user?.role),
     }),
-    [user, loading, state.users],
+    [user, loading],
   );
 
   return (

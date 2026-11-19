@@ -15,6 +15,7 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== location.origin) return; // never touch the API or fonts
+  if (url.pathname === "/api" || url.pathname.startsWith("/api/")) return;
 
   if (req.mode === "navigate") {
     e.respondWith(

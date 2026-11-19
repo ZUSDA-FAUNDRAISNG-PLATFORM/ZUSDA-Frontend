@@ -19,7 +19,6 @@ const Overview = () => {
     { label: "Ministries", count: state.ministries.length, to: "/dashboard/ministries" },
     { label: "Giving Categories", count: state.givingCategories?.length ?? 0, to: "/dashboard/giving-categories" },
     { label: "Budget Goal", count: state.site.budgetGoal, to: "/dashboard/budget" },
-    { label: "Users", count: state.users.length, to: "/dashboard/users" },
   ];
 
   return (

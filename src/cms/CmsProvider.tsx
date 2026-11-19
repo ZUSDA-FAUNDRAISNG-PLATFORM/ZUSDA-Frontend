@@ -2,13 +2,13 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { toast } from "sonner";
 import { ApiError, getStoredToken } from "@/api/client";
 import * as cmsApi from "@/api/cms";
-import { ADMIN_SESSION_EVENT, LOCAL_ADMIN_TOKEN } from "@/lib/testAdmin";
-import type { CmsCollection, CmsState, CmsUser, SiteSettings } from "./types";
+import { ADMIN_SESSION_EVENT } from "@/lib/adminSession";
+import type { CmsCollection, CmsState, SiteSettings } from "./types";
 import { createSeedState, missingDefaultHeroSlides, postersFromLegacyCollections } from "./seed";
-import { cacheHeroSlides, nextId, readJson, sanitizeCmsAssetRefs, writeJson } from "./utils";
+import { cacheHeroSlides, readJson, sanitizeCmsAssetRefs, writeJson } from "./utils";
 
 const STORAGE_KEY = "zusda-cms-v2";
-const USERS_KEY = "zusda-cms-users-v1";
+const LEGACY_USERS_KEY = "zusda-cms-users-v1";
 const LEGACY_COLLECTIONS_KEY = "zusda-local-collections-v1";
 const CMS_EVENT = "zusda:cms-changed";
 
@@ -61,7 +61,6 @@ const FALLBACK_CMS_STATE: CmsState = {
   gallery: [],
   ministries: [],
   givingCategories: [],
-  users: [],
 };
 
 type LegacyCollection = {
@@ -91,15 +90,12 @@ interface CmsContextValue {
   saveCollection: <K extends CmsCollection>(key: K, items: CmsState[K]) => void;
   upsertItem: <K extends CmsCollection>(key: K, item: Partial<CmsState[K][number]> & { id?: number }) => void;
   deleteItem: (key: CmsCollection, id: number) => void;
-  setUsers: (users: CmsUser[]) => void;
-  addUser: (user: Omit<CmsUser, "id" | "createdAt">) => CmsUser;
 }
 
 const CmsContext = createContext<CmsContextValue | null>(null);
 
 function hasServerToken() {
-  const token = getStoredToken();
-  return !!token && !token.startsWith(LOCAL_ADMIN_TOKEN);
+  return !!getStoredToken();
 }
 
 function describe(err: unknown) {
@@ -166,7 +162,6 @@ export function CmsProvider({ children }: { children: ReactNode }) {
               ? (remote as CmsState).committees
               : current.committees,
             site: remote.site as SiteSettings,
-            users: current.users,
           }) as CmsState,
         );
       } else {
@@ -210,7 +205,6 @@ export function CmsProvider({ children }: { children: ReactNode }) {
               ? (fresh as CmsState).committees
               : current.committees,
             site: fresh.site as SiteSettings,
-            users: current.users,
           }) as CmsState,
         );
       } else {
@@ -240,14 +234,21 @@ export function CmsProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener(ADMIN_SESSION_EVENT, retryHeroSeed);
     const boot = async () => {
-      const cached = readJson<CmsState>(STORAGE_KEY);
-      const cachedUsers = readJson<CmsUser[]>(USERS_KEY) ?? cached?.users ?? FALLBACK_CMS_STATE.users;
+      try {
+        localStorage.removeItem(LEGACY_USERS_KEY);
+        sessionStorage.removeItem(`${LEGACY_USERS_KEY}:session`);
+      } catch (error) {
+        console.warn("Could not clear obsolete local user credentials.", error);
+      }
+
+      const stored = readJson<Partial<CmsState> & { users?: unknown }>(STORAGE_KEY);
+      const { users: _discardedUsers, ...cachedContent } = stored ?? {};
+      const cached = stored ? cachedContent : null;
       if (cached) {
         setState({
           ...FALLBACK_CMS_STATE,
           ...cached,
           site: { ...FALLBACK_CMS_STATE.site, ...(cached.site ?? {}) },
-          users: cachedUsers,
         });
       }
 
@@ -268,7 +269,6 @@ export function CmsProvider({ children }: { children: ReactNode }) {
       }
 
       const safeCached = cached ? sanitizeCmsAssetRefs(cached, seed) : cached;
-      const users = readJson<CmsUser[]>(USERS_KEY) ?? safeCached?.users ?? seed.users;
 
       const buildState = (content: Partial<CmsState> | null): CmsState => {
         const base = content ?? {};
@@ -276,7 +276,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         if (Number.isNaN(new Date(mergedSite.countdownDate).getTime())) {
           mergedSite.countdownDate = seed.site.countdownDate;
         }
-        const next = { ...seed, ...base, site: { ...seed.site, ...mergedSite }, users } as CmsState;
+        const next = { ...seed, ...base, site: { ...seed.site, ...mergedSite } } as CmsState;
         const fixPhotos = (remoteList: CmsState["committee"], seedList: CmsState["committee"]) =>
           remoteList.map((item) => {
             if (typeof item.photoUrl !== "string" || !item.photoUrl.startsWith("/assets/")) return item;
@@ -310,7 +310,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
         let remote = await cmsApi.fetchCms();
         if (!remote.site && hasServerToken()) {
           try {
-            const { users: _ignored, ...seedContent } = seed;
+            const seedContent = { ...seed };
             seedContent.slides = seedContent.slides.filter((slide) => slide.placement !== "hero");
             remote = await cmsApi.importCms(seedContent);
           } catch {
@@ -346,8 +346,7 @@ export function CmsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!state) return;
-    writeJson(STORAGE_KEY, { ...state, users: [] });
-    writeJson(USERS_KEY, state.users);
+    writeJson(STORAGE_KEY, state);
     window.dispatchEvent(new Event(CMS_EVENT));
   }, [state]);
 
@@ -403,16 +402,6 @@ export function CmsProvider({ children }: { children: ReactNode }) {
             }) as CmsState,
         );
         push(cmsApi.deleteCmsItem(key, id), "Removed.");
-      },
-      setUsers: (users) => apply((current) => ({ ...current, users })),
-      addUser: (user) => {
-        const created: CmsUser = {
-          ...user,
-          id: nextId(state.users),
-          createdAt: new Date().toISOString(),
-        };
-        apply((current) => ({ ...current, users: [...current.users, created] }));
-        return created;
       },
     };
   }, [state, cmsAnswered, cmsUnavailable, apply, importDefaultHeroSlides, push]);

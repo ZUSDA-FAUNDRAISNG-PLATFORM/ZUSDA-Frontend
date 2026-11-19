@@ -5,7 +5,7 @@ export type RemoteCms = { site: SiteSettings | null } & { [K in CmsCollection]: 
 
 export const fetchCms = () => apiGet<RemoteCms>("/cms/");
 
-export const importCms = (state: Omit<CmsState, "users">) => apiPost<RemoteCms>("/cms/import", state);
+export const importCms = (state: CmsState) => apiPost<RemoteCms>("/cms/import", state);
 
 export const saveSite = (patch: Partial<SiteSettings>) => apiPut<SiteSettings>("/cms/site", patch);
 

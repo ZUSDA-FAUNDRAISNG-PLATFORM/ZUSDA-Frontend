@@ -140,12 +140,6 @@ const Login = () => {
             Back to site
           </Link>
 
-          <Link
-            to="/register"
-            className="font-medium text-navy hover:text-gold-dark"
-          >
-            Create account
-          </Link>
         </div>
       </form>
     </div>

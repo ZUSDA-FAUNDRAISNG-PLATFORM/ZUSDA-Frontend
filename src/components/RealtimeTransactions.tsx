@@ -164,7 +164,7 @@ const CountUpValue = ({ value, formatter, duration = 900, className }: CountUpVa
   return <span className={className}>{formatter ? formatter.format(displayValue) : displayValue.toLocaleString()}</span>;
 };
 
-const POLL_INTERVAL_MS = 30000;
+const POLL_INTERVAL_MS = 60000;
 const MAX_RETRY_ATTEMPTS = 4;
 
 const RealtimeTransactions = () => {
@@ -267,7 +267,7 @@ const RealtimeTransactions = () => {
           status: "ready",
           lastSyncedAt: new Date().toISOString(),
           retryCount: 0,
-          message: newlyArrivedIds.length > 0 ? `A new transaction just arrived${newlyArrivedIds.length > 1 ? "s" : ""}.` : "Live updates are active. Refreshing every 30 seconds.",
+          message: newlyArrivedIds.length > 0 ? `A new transaction just arrived${newlyArrivedIds.length > 1 ? "s" : ""}.` : "Live updates are active. Refreshing every 60 seconds.",
         }));
       } catch (error) {
         if (!isMounted) {

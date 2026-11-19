@@ -12,7 +12,6 @@ import ericNtongai from "@/assets/committee/Eric_Ntongai.webp";
 import deborahKeira from "@/assets/committee/Deborah_Keira.webp";
 import annMaroa from "@/assets/committee/Ann_Maroa.webp";
 import type { CmsState, Poster } from "./types";
-import { hashPassword } from "./utils";
 import type { EventCollectionDTO } from "@/api/collections";
 
 const motivationImages = Object.entries(
@@ -86,10 +85,6 @@ export function missingDefaultHeroSlides(slides: Slide[]) {
 }
 
 export async function createSeedState(): Promise<CmsState> {
-  const adminHash = await hashPassword("Kinamba2026");
-  const memberHash = await hashPassword("Member2026");
-  const now = new Date().toISOString();
-
   return {
     site: {
       churchName: "ZUSDA",
@@ -306,26 +301,6 @@ export async function createSeedState(): Promise<CmsState> {
       { id: 4, title: "Offering", description: "Freewill offering for worship and ministry.", projectId: 1, published: true, sortOrder: 4 },
       { id: 5, title: "Music Ministry", description: "Support for worship and music ministry.", projectId: 1, published: true, sortOrder: 5 },
       { id: 6, title: "Other", description: "Other designated gifts.", projectId: 1, published: true, sortOrder: 6 },
-    ],
-    users: [
-      {
-        id: 1,
-        name: "ZUSDA Admin",
-        email: "admin@zusda.local",
-        username: "zusda.admin",
-        passwordHash: adminHash,
-        role: "admin",
-        createdAt: now,
-      },
-      {
-        id: 2,
-        name: "Church Member",
-        email: "member@zusda.local",
-        username: "member",
-        passwordHash: memberHash,
-        role: "member",
-        createdAt: now,
-      },
     ],
   };
 }

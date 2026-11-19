@@ -33,14 +33,6 @@ export function publishedOnly<T extends { published: boolean }>(items: T[]) {
   return items.filter((item) => item.published);
 }
 
-export async function hashPassword(password: string) {
-  const data = new TextEncoder().encode(`zusda-cms:${password}`);
-  const digest = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(digest))
-    .map((byte) => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 export function fileToDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
@@ -189,7 +181,6 @@ export function mergeCmsState(existing: Partial<CmsState> | null, seed: CmsState
     gallery: Array.isArray(existing.gallery) ? existing.gallery : seed.gallery,
     ministries: mergeByTitle(existing.ministries, seed.ministries),
     givingCategories: mergeByTitle(existing.givingCategories, seed.givingCategories),
-    users: existing.users?.length ? existing.users : seed.users,
   };
 }
 

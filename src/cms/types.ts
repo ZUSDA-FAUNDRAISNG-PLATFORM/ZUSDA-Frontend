@@ -8,16 +8,6 @@ export type UserRole =
 /** Crop / focus position for CMS images shown in cards. */
 export type ImageFocal = "center" | "top" | "bottom" | "left" | "right";
 
-export interface CmsUser {
-  id: number;
-  name: string;
-  email: string;
-  username: string;
-  passwordHash: string;
-  role: UserRole;
-  createdAt: string;
-}
-
 export interface SiteSettings {
   churchName: string;
   tagline: string;
@@ -227,7 +217,6 @@ export interface CmsState {
   gallery: GalleryItem[];
   ministries: Ministry[];
   givingCategories: GivingCategoryItem[];
-  users: CmsUser[];
 }
 
-export type CmsCollection = Exclude<keyof CmsState, "site" | "users">;
+export type CmsCollection = Exclude<keyof CmsState, "site">;

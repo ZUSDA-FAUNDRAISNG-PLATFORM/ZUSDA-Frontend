@@ -137,7 +137,7 @@ const Footer = () => {
             <p className="mt-1 text-xs text-white/45">Designed for SDA Zetech University Church</p>
           </div>
           <Link to="/login" className="inline-flex min-h-11 items-center text-xs font-medium text-white/55 transition hover:text-gold">
-            Login
+            Dashboard
           </Link>
         </div>
       </div>
